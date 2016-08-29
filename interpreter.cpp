@@ -258,7 +258,7 @@ static value expand_clauses(value clauses)
 
     if (is_cond_else_clause(first)) {
         if (!is_null(rest))
-            std::cerr << "warning: cond else clause isn't last, ignoring tail: " << clauses;
+            std::cerr << "warning: cond else clause isn't last, ignoring tail: " << clauses << std::endl;
 
         return sequence_to_exp(cond_actions(first));
     }
