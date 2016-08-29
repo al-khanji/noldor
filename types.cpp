@@ -149,9 +149,7 @@ static std::string compound_function_repr(value val)
     std::stringstream stream(str);
 
     auto proc = object_data_as<compound_procedure_t *>(val);
-
-    static auto lambda = symbol("lambda");
-    stream << cons(lambda, cons(proc->parameters, proc->body));
+    stream << cons(SYMBOL_LITERAL(lambda), cons(proc->parameters, proc->body));
     return stream.str();
 }
 

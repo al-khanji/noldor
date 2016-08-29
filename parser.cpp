@@ -121,7 +121,7 @@ value read(std::istream &input)
             char dotdot[2] = { 0, 0 };
 
             if (input.read(dotdot, 2) && strncmp("..", dotdot, 2) == 0) {
-                return symbol("...");
+                return SYMBOL_LITERAL(...);
             } else {
                 switch (input.gcount()) {
                 case 2:
@@ -130,7 +130,7 @@ value read(std::istream &input)
                     input.putback(dotdot[0]);
                 }
 
-                return symbol(".");
+                return SYMBOL_LITERAL(.);
             }
         }
 
@@ -141,8 +141,11 @@ value read(std::istream &input)
             return symbol(symname);
         }
 
-        if ((c == '+' || c == '-') && is_delimiter(input.peek()))
-            return symbol(std::string(1, c));
+        if (c == '+' && is_delimiter(input.peek()))
+            return SYMBOL_LITERAL(+);
+
+        if (c == '-' && is_delimiter(input.peek()))
+            return SYMBOL_LITERAL(-);
 
         if (isdigit(c) || ((c == '+' || c == '-') && isdigit(input.peek()))) {
             const int sign = (c == '-') ? -1 : 1;
@@ -175,13 +178,15 @@ value read(std::istream &input)
             break;
 
         case '\'':
-            return list(symbol("quote"), read(input));
+            return list(SYMBOL_LITERAL(quote), read(input));
 
         case '`':
-            return list(symbol("quasiquote"), read(input));
+            return list(SYMBOL_LITERAL(quasiquote), read(input));
 
         case ',':
-            return list(symbol(input.peek() == '@' ? "unquote-splicing" : "unquote"), read(input));
+            return list(input.peek() == '@' ? SYMBOL_LITERAL(unquote-splicing)
+                                            : SYMBOL_LITERAL(unquote),
+                        read(input));
             break;
 
         case '"':

@@ -209,6 +209,8 @@ X_NOLDOR_SHARED_PROCEDURES(DECLARE_C_FUNCTION)
 
 NOLDOR_EXPORT value symbol(const std::string &);
 
+#define SYMBOL_LITERAL(NAME) [] () -> value { static value sym = symbol(#NAME); return sym; } ()
+
 template <class... Args>
 inline value list(value v, Args... args)
 { return cons(v, list(args...)); }

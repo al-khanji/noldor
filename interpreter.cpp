@@ -26,26 +26,22 @@ static bool is_self_evaluating(value exp)
 
 static bool is_quoted(value exp)
 {
-    static const auto quote = symbol("quote");
-    return is_tagged_list(exp, quote);
+    return is_tagged_list(exp, SYMBOL_LITERAL(quote));
 }
 
 static bool is_quasiquoted(value exp)
 {
-    static const auto quasiquote = symbol("quasiquote");
-    return is_tagged_list(exp, quasiquote);
+    return is_tagged_list(exp, SYMBOL_LITERAL(quasiquote));
 }
 
 static bool is_unquoted(value exp)
 {
-    static const auto unquote = symbol("unquote");
-    return is_tagged_list(exp, unquote);
+    return is_tagged_list(exp, SYMBOL_LITERAL(unquote));
 }
 
 static bool is_unquoted_splicing(value exp)
 {
-    static const auto unquote = symbol("unquote-splicing");
-    return is_tagged_list(exp, unquote);
+    return is_tagged_list(exp, SYMBOL_LITERAL(unquote-splicing));
 }
 
 static value text_of_quotation(value exp)
@@ -60,8 +56,7 @@ static bool is_variable(value exp)
 
 static bool is_assignment(value exp)
 {
-    static const auto set = symbol("set!");
-    return is_tagged_list(exp, set);
+    return is_tagged_list(exp, SYMBOL_LITERAL(set!));
 }
 
 static value assignment_variable(value exp)
@@ -76,8 +71,7 @@ static value assignment_value(value exp)
 
 static bool is_lambda(value exp)
 {
-    static const auto lambda = symbol("lambda");
-    return is_tagged_list(exp, lambda);
+    return is_tagged_list(exp, SYMBOL_LITERAL(lambda));
 }
 
 static value lambda_parameters(value exp)
@@ -92,14 +86,12 @@ static value lambda_body(value exp)
 
 static value make_lambda(value parameters, value body)
 {
-    static const auto lambda = symbol("lambda");
-    return cons(lambda, cons(parameters, body));
+    return cons(SYMBOL_LITERAL(lambda), cons(parameters, body));
 }
 
 static bool is_definition(value exp)
 {
-    static const auto define = symbol("define");
-    return is_tagged_list(exp, define);
+    return is_tagged_list(exp, SYMBOL_LITERAL(define));
 }
 
 static value definition_variable(value exp)
@@ -118,8 +110,7 @@ static value definition_value(value exp)
 
 static bool is_if(value exp)
 {
-    static const auto if_sym = symbol("if");
-    return is_tagged_list(exp, if_sym);
+    return is_tagged_list(exp, SYMBOL_LITERAL(if));
 }
 
 static value if_predicate(value exp)
@@ -140,8 +131,7 @@ static value if_alternative(value exp)
 
 static bool is_begin(value exp)
 {
-    static const auto begin = symbol("begin");
-    return is_tagged_list(exp, begin);
+    return is_tagged_list(exp, SYMBOL_LITERAL(begin));
 }
 
 static value begin_actions(value exp)
@@ -201,14 +191,12 @@ static value rest_operands(value ops)
 
 static value make_if(value predicate, value consequent, value alternative)
 {
-    static const auto if_sym = symbol("if");
-    return list(if_sym, predicate, consequent, alternative);
+    return list(SYMBOL_LITERAL(if), predicate, consequent, alternative);
 }
 
 static value make_begin(value seq)
 {
-    static const auto begin = symbol("begin");
-    return cons(begin, seq);
+    return cons(SYMBOL_LITERAL(begin), seq);
 }
 
 static value sequence_to_exp(value seq)
@@ -223,8 +211,7 @@ static value sequence_to_exp(value seq)
 
 static bool is_cond(value exp)
 {
-    static const auto cond = symbol("cond");
-    return is_tagged_list(exp, cond);
+    return is_tagged_list(exp, SYMBOL_LITERAL(cond));
 }
 
 static value cond_clauses(value exp)
@@ -244,8 +231,7 @@ static value cond_actions(value clause)
 
 static bool is_cond_else_clause(value clause)
 {
-    static const auto else_sym = symbol("else");
-    return eq(cond_predicate(clause), else_sym);
+    return eq(cond_predicate(clause), SYMBOL_LITERAL(else));
 }
 
 static value expand_clauses(value clauses)
@@ -467,7 +453,7 @@ auto trace_args = [] (std::initializer_list<std::string> parts) -> std::string {
 #define TEST(tst)          TRACE(4, TEST,    #tst);       if (tst)
 #define RETURN(VAL)        TRACE(4, RETURN,  #VAL);       return VAL;
 
-#define CONST(NAME)        [] () { static const auto K = symbol(#NAME); return K; } ()
+#define CONST(NAME)        SYMBOL_LITERAL(NAME)
 #define LABEL(NAME)        LABEL_##NAME
 #define REG(NAME)          thread.getreg(reg::NAME)
 #define OP(O, ...)         O(__VA_ARGS__)
