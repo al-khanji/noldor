@@ -184,9 +184,12 @@ value read(std::istream &input)
             return list(SYMBOL_LITERAL(quasiquote), read(input));
 
         case ',':
-            return list(input.peek() == '@' ? SYMBOL_LITERAL(unquote-splicing)
-                                            : SYMBOL_LITERAL(unquote),
-                        read(input));
+            if (input.peek() == '@') {
+                input.get(c);
+                return list(SYMBOL_LITERAL(unquote-splicing), read(input));
+            } else {
+                return list(SYMBOL_LITERAL(unquote), read(input));
+            }
             break;
 
         case '"':
