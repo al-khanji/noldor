@@ -134,8 +134,6 @@ private:
     std::unique_ptr<scope_data> data;
 };
 
-NOLDOR_EXPORT value list();
-
 constexpr uint8_t METATYPE_VERSION = 0;
 
 typedef void (*gc_visit_fn_t)(value *child, void *data);
@@ -186,8 +184,10 @@ struct NOLDOR_EXPORT dot_tag {};
     X("integer?",                   is_int,             bool,           value         ) \
     X("double?",                    is_double,          bool,           value         ) \
     X("number?",                    is_number,          bool,           value         ) \
-    X("+",                          sum,                value,          value, dot_tag) \
+    X("+",                          add,                value,          value, dot_tag) \
     X("-",                          sub,                value,          value, dot_tag) \
+    X("*",                          mul,                value,          value, dot_tag) \
+    X("/",                          div,                value,          value, dot_tag) \
     X("boolean?",                   is_bool,            bool,           value         ) \
     X("not",                        is_false,           bool,           value         ) \
     X("pair?",                      is_pair,            bool,           value         ) \
@@ -255,6 +255,8 @@ X_NOLDOR_SHARED_PROCEDURES(DECLARE_C_FUNCTION)
 #pragma clang diagnostic pop
 
 #define SYMBOL_LITERAL(NAME) [] () -> value { static value sym = symbol(#NAME); return sym; } ()
+
+NOLDOR_EXPORT value list();
 
 template <class... Args>
 inline value list(value v, Args... args)
