@@ -99,6 +99,12 @@ public:
     using base_error::base_error;
 };
 
+class NOLDOR_EXPORT call_error : public base_error
+{
+public:
+    using base_error::base_error;
+};
+
 class NOLDOR_EXPORT runtime_error : public noldor_exception
 {
 public:
@@ -238,6 +244,7 @@ struct NOLDOR_EXPORT dot_tag {};
     X("procedure?",                 is_procedure,       bool,           value         ) \
     X("primitive-procedure?",       is_primitive_procedure, bool,       value         ) \
     X("compound-procedure?",        is_compound_procedure,  bool,       value         ) \
+    X("apply",                      apply,              value,          value, value, dot_tag    ) \
     X("environment?",               is_environment,     bool,           value         ) \
     X("eval",                       eval,               value,          value, value  ) \
     X("eof-object?",                is_eof_object,      bool,           value         ) \

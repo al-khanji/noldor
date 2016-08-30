@@ -174,12 +174,8 @@ inline auto apply_tuple(FunType fn, std::tuple<Args...> &&arg_tuple)
 
 #define MAKE_C_FUNC_DISPATCHER(LISP_NAME, C_NAME, C_RETURN, ...) \
     static value C_NAME##_dispatcher(value argl) { \
-        try { \
-            static C_RETURN (*fnptr)(__VA_ARGS__) = &C_NAME; \
-            return value_converter<C_RETURN, value>::convert(apply_tuple(fnptr, arg_converter<__VA_ARGS__>::get(std::make_tuple(), argl))); \
-        } catch (std::exception &e) { \
-            throw noldor::runtime_error(std::string(LISP_NAME " internal fault: ") + e.what()); \
-        } \
+        static C_RETURN (*fnptr)(__VA_ARGS__) = &C_NAME; \
+        return value_converter<C_RETURN, value>::convert(apply_tuple(fnptr, arg_converter<__VA_ARGS__>::get(std::make_tuple(), argl))); \
     }
 
 X_NOLDOR_SHARED_PROCEDURES(MAKE_C_FUNC_DISPATCHER)

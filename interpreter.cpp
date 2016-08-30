@@ -309,15 +309,25 @@ static value extend_environment(value vars, value vals, value base_env)
     auto env = mk_environment(base_env);
 
     while (!is_null(vars) && !is_null(vals)) {
-        environment_define(env, car(vars), car(vals));
-        vars = cdr(vars);
-        vals = cdr(vals);
+        if (eq(car(vars), SYMBOL_LITERAL(.))) {
+            environment_define(env, cadr(vars), vals);
+            vars = cddr(vars);
+            vals = list();
+
+            if (!is_null(vars))
+                throw noldor::call_error("trailing parameters after dot param", vars);
+        } else {
+            environment_define(env, car(vars), car(vals));
+            vars = cdr(vars);
+            vals = cdr(vals);
+        }
     }
 
     if (!is_null(vars))
-        std::cerr << "extend_environment: extra variables: " << vars << std::endl;
-    else if (!is_null(vals))
-        std::cerr << "extend_environment: extra values: " << vals << std::endl;
+        throw noldor::call_error("unsatisfied function parameters", vars);
+
+    if (!is_null(vals))
+        throw noldor::call_error("too many arguments", vals);
 
     return env;
 }
@@ -703,6 +713,22 @@ MAKE_LABEL(ev_definition_1)
     GOTO(REG(continu))
 
 EXIT_INTERPRETER
+}
+
+value apply(value proc, value argl, dot_tag)
+{
+    if (is_primitive_procedure(proc))
+        return apply_primitive_procedure(proc, argl);
+
+    check_type(is_compound_procedure, proc, "apply: unknown procedure type");
+
+    auto env = extend_environment(procedure_parameters(proc), argl,
+                                  procedure_environment(proc));
+
+    auto body = procedure_body(proc);
+    body = cons(SYMBOL_LITERAL(begin), body);
+
+    return interpret(body, env);
 }
 
 value eval(value exp, value env)
