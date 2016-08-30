@@ -131,44 +131,6 @@ struct NOLDOR_EXPORT thread_t {
     }
 };
 
-struct NOLDOR_EXPORT symbol_t {
-    std::string name;
-    std::size_t hash;
-};
-
-struct NOLDOR_EXPORT pair_t {
-    uint64_t car;
-    uint64_t cdr;
-};
-
-struct NOLDOR_EXPORT environment_t {
-    value outer = list();
-    std::unordered_map<uint64_t, uint64_t> symtab;
-};
-
-struct NOLDOR_EXPORT primitive_function_t {
-    std::string name;
-    std::function<value(value)> fn;
-};
-
-struct NOLDOR_EXPORT compound_procedure_t {
-    uint64_t environment;
-    uint64_t parameters;
-    uint64_t body;
-};
-
-struct NOLDOR_EXPORT vector_t {
-    std::vector<value> elements;
-};
-
-struct NOLDOR_EXPORT string_t {
-    std::string string;
-};
-
-struct NOLDOR_EXPORT char_t {
-    uint32_t character;
-};
-
 struct NOLDOR_EXPORT gc_header {
     metatype_t *metaobject = nullptr;
 
@@ -186,32 +148,16 @@ struct NOLDOR_EXPORT gc_mark_sweep_data {
     std::unordered_set<gc_header *> pending_garbage;
 };
 
+struct gc_status_info {
+    size_t n_bytes_allocated = 0;
+    size_t n_objects_allocated = 0;
+};
+
 struct NOLDOR_EXPORT globals {
     static list_t *scopes();
     static list_t *allocations();
-
-    static std::unordered_set<metatype_t *> &metaobjects();
-    static std::unordered_map<std::size_t, uint64_t> &symbols();
-
+    static struct gc_status_info *gc_status_info();
     static void register_allocation(gc_header *obj);
-    static void register_type(metatype_t *metaobject);
-
-    static value intern_symbol(const std::string &name);
-
-    static value global_environment();
-
-    static metatype_t *false_metaobject();
-    static metatype_t *true_metaobject();
-    static metatype_t *null_metaobject();
-    static metatype_t *pair_metaobject();
-    static metatype_t *environment_metaobject();
-    static metatype_t *primitive_function_metaobject();
-    static metatype_t *primitive_macro_metaobject();
-    static metatype_t *compound_function_metaobject();
-    static metatype_t *vector_metaobject();
-    static metatype_t *string_metaobject();
-    static metatype_t *char_metaobject();
-    static metatype_t *eof_metaobject();
 };
 
 union NOLDOR_EXPORT flipper_t {
@@ -226,7 +172,6 @@ class NOLDOR_EXPORT magic {
         max_double = 0xfff8000000000000,
         int32_tag  = 0xfff9000000000000,
         ptr_tag    = 0xfffa000000000000,
-        symb_tag   = 0xfffb000000000000,
         tag_mask   = 0xffff000000000000
     };
 
@@ -240,9 +185,6 @@ public:
     static inline bool is_pointer(uint64_t u) noexcept
     { return (u & tag_mask) == ptr_tag; }
 
-    static inline bool is_symbol(uint64_t u) noexcept
-    { return (u & tag_mask) == symb_tag; }
-
     static inline double get_double(uint64_t u)
     { check_type(is_double, u, "magic; double expected"); flipper_t flipper; flipper.u64 = u; return flipper.dd; }
 
@@ -252,9 +194,6 @@ public:
     static inline void* get_pointer(uint64_t u)
     { check_type(is_pointer, u, "magic: pointer expected"); return reinterpret_cast<void *>(u & ~ptr_tag); }
 
-    static inline symbol_t* get_symbol(uint64_t u)
-    { check_type(is_symbol, u, "magic: symbol expected"); return reinterpret_cast<symbol_t *>(u & ~symb_tag); }
-
     static inline uint64_t from_double(double d) noexcept
     { flipper_t flipper; flipper.dd = d; return flipper.u64; }
 
@@ -263,9 +202,6 @@ public:
 
     static inline uint64_t from_pointer(const void *d) noexcept
     { return reinterpret_cast<uint64_t>(d) | ptr_tag; }
-
-    static inline uint64_t from_symbol(const symbol_t *sym) noexcept
-    { return reinterpret_cast<uint64_t>(sym) | symb_tag; }
 };
 
 } // namespace noldor

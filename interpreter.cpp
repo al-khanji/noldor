@@ -21,7 +21,7 @@ const char * const regnames[] = { REGISTERS(X) };
 
 static bool is_self_evaluating(value exp)
 {
-    return is_double(exp) || is_int(exp);
+    return is_number(exp) || object_metaobject(exp)->flags & typeflags_self_eval;
 }
 
 static bool is_quoted(value exp)
@@ -257,41 +257,6 @@ static value cond_to_if(value exp)
     return expand_clauses(cond_clauses(exp));
 }
 
-static value make_procedure(value parameters, value body, value env)
-{
-    auto obj = allocate(globals::compound_function_metaobject(), sizeof(compound_procedure_t), alignof(compound_procedure_t));
-    new (object_data(obj)) compound_procedure_t { env, parameters, body };
-    return obj;
-}
-
-static bool is_primitive_procedure(value proc)
-{
-    return object_metaobject(proc) == globals::primitive_function_metaobject();
-}
-
-static bool is_compound_procedure(value proc)
-{
-    return object_metaobject(proc) == globals::compound_function_metaobject();
-}
-
-static value procedure_parameters(value proc)
-{
-    check_type(is_compound_procedure, proc, "procedure_parameters: expected compound procedure");
-    return static_cast<compound_procedure_t *>(object_data(proc))->parameters;
-}
-
-static value procedure_environment(value proc)
-{
-    check_type(is_compound_procedure, proc, "procedure_environment: expected compound procedure");
-    return static_cast<compound_procedure_t *>(object_data(proc))->environment;
-}
-
-static value procedure_body(value proc)
-{
-    check_type(is_compound_procedure, proc, "procedure_body: expected compound procedure");
-    return static_cast<compound_procedure_t *>(object_data(proc))->body;
-}
-
 static value empty_arglist()
 {
     return list();
@@ -304,28 +269,11 @@ static value adjoin_arg(value arg, value arglist)
 
 static value splice_arg(value arg, value arglist)
 {
+    if (is_null(arg))
+        return arglist;
+
     check_type(is_pair, arg, "splice_arg: expected list");
     return append(arglist, arg);
-}
-
-static value apply_primitive_procedure(value proc, value argl)
-{
-    check_type(is_primitive_procedure, proc, "apply_primitive_procedure: expected primitive procedure");
-
-    auto meta = object_metaobject(proc);
-    auto apply = meta->apply;
-
-    return apply(proc, argl);
-}
-
-static value apply_primitive_macro(value proc, value argl)
-{
-    check_type(is_primitive_macro, proc, "apply_primitive_macro: expected primitive procedure");
-
-    auto meta = object_metaobject(proc);
-    auto expand = meta->expand;
-
-    return expand(proc, argl);
 }
 
 static value extend_environment(value vars, value vals, value base_env)
@@ -346,18 +294,6 @@ static value extend_environment(value vars, value vals, value base_env)
     return env;
 }
 
-static bool has_custom_eval(value exp)
-{
-    auto meta = object_metaobject(exp);
-    return meta != nullptr && meta->eval != nullptr;
-}
-
-static value custom_eval(value exp, value env)
-{
-    auto meta = object_metaobject(exp);
-    return meta->eval(exp, env);
-}
-
 static value interpret(value exp, value env)
 {
 #define X_LABELS(X) \
@@ -366,7 +302,6 @@ static value interpret(value exp, value env)
  X(eval_finished) \
  X(eval_dispatch) \
  X(ev_cond) \
- X(ev_custom_eval) \
  X(ev_self_eval) \
  X(ev_variable) \
  X(ev_quoted) \
@@ -399,9 +334,7 @@ static value interpret(value exp, value env)
  X(ev_assignment) \
  X(ev_assignment_1) \
  X(ev_definition) \
- X(ev_definition_1) \
- X(macro_dispatch) \
- X(primitive_macro_apply)
+ X(ev_definition_1)
 
 #define X(LABEL) LABEL_##LABEL,
 enum : uint64_t { X_LABELS(X) };
@@ -480,9 +413,6 @@ MAKE_LABEL(unknown_procedure_type)
     GOTO(LABEL(eval_finished))
 
 MAKE_LABEL(eval_dispatch)
-    TEST(OP(has_custom_eval, REG(exp)))
-    BRANCH(LABEL(ev_custom_eval))
-
     TEST(OP(is_self_evaluating, REG(exp)))
     BRANCH(LABEL(ev_self_eval))
 
@@ -521,10 +451,6 @@ MAKE_LABEL(eval_dispatch)
 MAKE_LABEL(ev_cond)
     ASSIGN(exp, OP(cond_to_if, REG(exp)))
     GOTO(LABEL(eval_dispatch))
-
-MAKE_LABEL(ev_custom_eval)
-    ASSIGN(val, OP(custom_eval, REG(exp), REG(env)))
-    GOTO(REG(continu))
 
 MAKE_LABEL(ev_self_eval)
     ASSIGN(val, REG(exp))
@@ -597,7 +523,7 @@ MAKE_LABEL(en_qq_arg_dispatch)
 MAKE_LABEL(ev_lambda)
     ASSIGN(unev, OP(lambda_parameters, REG(exp)))
     ASSIGN(exp, OP(lambda_body, REG(exp)))
-    ASSIGN(val, OP(make_procedure, REG(unev), REG(exp), REG(env)))
+    ASSIGN(val, OP(mk_procedure, REG(unev), REG(exp), REG(env)))
     GOTO(REG(continu))
 
 MAKE_LABEL(ev_application)
@@ -613,8 +539,6 @@ MAKE_LABEL(ev_appl_did_operator)
     RESTORE(unev)
     RESTORE(env)
     ASSIGN(proc, REG(val))
-    TEST(OP(is_macro, REG(proc)))
-    BRANCH(LABEL(macro_dispatch))
     ASSIGN(argl, OP(empty_arglist))
     TEST(OP(has_no_operands, REG(unev)))
     BRANCH(LABEL(apply_dispatch))
@@ -648,16 +572,6 @@ MAKE_LABEL(ev_appl_accum_last_arg)
     ASSIGN(argl, OP(adjoin_arg, REG(val), REG(argl)))
     RESTORE(proc)
     GOTO(LABEL(apply_dispatch))
-
-MAKE_LABEL(macro_dispatch)
-    TEST(OP(is_primitive_macro, REG(proc)))
-    BRANCH(LABEL(primitive_macro_apply))
-    GOTO(LABEL(unknown_procedure_type))
-
-MAKE_LABEL(primitive_macro_apply)
-    ASSIGN(exp, OP(apply_primitive_macro, REG(proc), REG(unev)))
-    RESTORE(continu)
-    GOTO(LABEL(eval_dispatch))
 
 MAKE_LABEL(apply_dispatch)
     TEST(OP(is_primitive_procedure, REG(proc)))
@@ -714,9 +628,9 @@ MAKE_LABEL(ev_if_decide)
     RESTORE(continu)
     RESTORE(env)
     RESTORE(exp)
-    TEST(OP(is_truthy, REG(val)))
-    BRANCH(LABEL(ev_if_consequent))
-    GOTO(LABEL(ev_if_alternative))
+    TEST(OP(is_false, REG(val)))
+    BRANCH(LABEL(ev_if_alternative))
+    GOTO(LABEL(ev_if_consequent))
 
 MAKE_LABEL(ev_if_alternative)
     ASSIGN(exp, OP(if_alternative, REG(exp)))

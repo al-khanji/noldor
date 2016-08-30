@@ -115,33 +115,36 @@ constexpr uint8_t METATYPE_VERSION = 0;
 
 typedef void (*gc_visit_fn_t)(value *child, void *data);
 
-struct NOLDOR_EXPORT metatype_t {
-    metatype_t * const self;
-    const uint8_t version = METATYPE_VERSION;
+enum typeflags {
+    typeflags_none      = 0x0,
+    typeflags_static    = 0x1, // GC should not reap
+    typeflags_self_eval = 0x2, // evaluates to itself
+};
 
-    const char * const type_name;
-    const char * const predicate_name;
+struct NOLDOR_EXPORT metatype_t {
+    const uint8_t version;
+    const typeflags flags;
 
     void (* const destruct)(value self);
     void (* const gc_visit)(value self, gc_visit_fn_t visitor, void *data);
-
     std::string (* const repr)(value self);
-    value (* const eval)(value self, value env);
-    value (* const expand)(value self, value argl);
-    value (* const apply)(value self, value argl);
-
-    value (* const add)(value self, value other);
-    value (* const sub)(value self, value other);
 };
 
 NOLDOR_EXPORT void noldor_init();
 NOLDOR_EXPORT value allocate(metatype_t *metaobject, size_t size, size_t alignment = alignof(uintptr_t));
 
 NOLDOR_EXPORT void register_function(const char *name, std::function<value(value)> fn);
-NOLDOR_EXPORT void register_type(metatype_t *metaobject);
 
 NOLDOR_EXPORT metatype_t *object_metaobject(value obj);
 NOLDOR_EXPORT void *object_data(value obj);
+
+template <class T>
+inline value object_allocate(metatype_t *metaobject, T &&obj)
+{
+    value cell = allocate(metaobject, sizeof(T), alignof(T));
+    new (object_data(cell)) T(std::move(obj));
+    return cell;
+}
 
 template <class T>
 inline T object_data_as(value obj)
@@ -152,15 +155,22 @@ inline T object_data_as(value obj)
 struct NOLDOR_EXPORT dot_tag {};
 
 #define X_NOLDOR_SHARED_PROCEDURES(X) \
+    X("eqv?",                       eqv,                bool,           value, value  ) \
+    X("eq?",                        eq,                 bool,           value, value  ) \
+    X("equal?",                     equal,              bool,           value, value  ) \
+    X("integer?",                   is_int,             bool,           value         ) \
+    X("double?",                    is_double,          bool,           value         ) \
+    X("number?",                    is_number,          bool,           value         ) \
+    X("+",                          sum,                value,          value, dot_tag) \
+    X("-",                          sub,                value,          value, dot_tag) \
+    X("boolean?",                   is_bool,            bool,           value         ) \
+    X("not",                        is_false,           bool,           value         ) \
+    X("pair?",                      is_pair,            bool,           value         ) \
     X("cons",                       cons,               value,          value, value  ) \
     X("car",                        car,                value,          value         ) \
     X("cdr",                        cdr,                value,          value         ) \
     X("set-car!",                   set_car,            value,          value, value  ) \
     X("set-cdr!",                   set_cdr,            value,          value, value  ) \
-    X("tagged-list?",               is_tagged_list,     bool,           value, value  ) \
-    X("assq",                       assq,               value,          value, value  ) \
-    X("append",                     append,             value,          value, value  ) \
-    X("eval",                       eval,               value,          value, value  ) \
     X("caar",                       caar,               value,          value         ) \
     X("cadr",                       cadr,               value,          value         ) \
     X("cdar",                       cdar,               value,          value         ) \
@@ -189,25 +199,30 @@ struct NOLDOR_EXPORT dot_tag {};
     X("cddadr",                     cddadr,             value,          value         ) \
     X("cdddar",                     cdddar,             value,          value         ) \
     X("cddddr",                     cddddr,             value,          value         ) \
-    X("symbol->string",             symbol_to_string,   std::string,    value         ) \
-    X("bool?",                      is_bool,            bool,           value         ) \
-    X("external-representation",    printable,          std::string,    value         ) \
-    X("garbage-collect",            run_gc,             int                           ) \
+    X("null?",                      is_null,            bool,           value         ) \
+    X("list?",                      is_list,            bool,           value         ) \
     X("list",                       list,               value,          value, dot_tag) \
-    X("+",                          sum,                value,          value, dot_tag) \
-    X("-",                          sub,                value,          value, dot_tag) \
-    X("eq?",                        eq,                 bool,           value, value  ) \
+    X("append",                     append,             value,          value, value  ) \
+    X("assq",                       assq,               value,          value, value  ) \
     X("symbol?",                    is_symbol,          bool,           value         ) \
-    X("integer?",                   is_int,             bool,           value         ) \
-    X("double?",                    is_double,          bool,           value         ) \
-    X("number?",                    is_number,          bool,           value         ) \
-    X("list?",                      is_list,            bool,           value         )
+    X("symbol->string",             symbol_to_string,   std::string,    value         ) \
+    X("string->symbol",             symbol,             value,          std::string   ) \
+    X("char?",                      is_char,            bool,           value         ) \
+    X("string?",                    is_string,          bool,           value         ) \
+    X("vector?",                    is_vector,          bool,           value         ) \
+    X("procedure?",                 is_procedure,       bool,           value         ) \
+    X("primitive-procedure?",       is_primitive_procedure, bool,       value         ) \
+    X("compound-procedure?",        is_compound_procedure,  bool,       value         ) \
+    X("environment?",               is_environment,     bool,           value         ) \
+    X("eval",                       eval,               value,          value, value  ) \
+    X("eof-object?",                is_eof_object,      bool,           value         ) \
+    X("external-representation",    printable,          std::string,    value         ) \
+    X("tagged-list?",               is_tagged_list,     bool,           value, value  ) \
+    X("garbage-collect",            run_gc,             int                           )
 
 #define DECLARE_C_FUNCTION(LISP_NAME, C_NAME, C_RETURN, ...) NOLDOR_EXPORT C_RETURN C_NAME (__VA_ARGS__);
 X_NOLDOR_SHARED_PROCEDURES(DECLARE_C_FUNCTION)
 #undef DECLARE_C_FUNCTION
-
-NOLDOR_EXPORT value symbol(const std::string &);
 
 #define SYMBOL_LITERAL(NAME) [] () -> value { static value sym = symbol(#NAME); return sym; } ()
 
@@ -215,13 +230,7 @@ template <class... Args>
 inline value list(value v, Args... args)
 { return cons(v, list(args...)); }
 
-NOLDOR_EXPORT bool is_null(value);
-NOLDOR_EXPORT bool is_pair(value);
-
 NOLDOR_EXPORT value mk_bool(bool);
-NOLDOR_EXPORT bool is_false(value);
-NOLDOR_EXPORT bool is_true(value);
-NOLDOR_EXPORT bool is_truthy(value);
 
 NOLDOR_EXPORT value mk_double(double);
 NOLDOR_EXPORT double to_double(value);
@@ -231,30 +240,29 @@ NOLDOR_EXPORT int32_t to_int(value);
 
 NOLDOR_EXPORT value mk_environment(value outer = list());
 NOLDOR_EXPORT value mk_empty_environment();
-NOLDOR_EXPORT bool is_environment(value);
+
+NOLDOR_EXPORT value environment_global();
 NOLDOR_EXPORT value environment_find(value env, value sym);
 NOLDOR_EXPORT value environment_get(value env, value sym);
 NOLDOR_EXPORT value environment_set(value env, value sym, value val);
 NOLDOR_EXPORT value environment_define(value env, value sym, value val);
 
-NOLDOR_EXPORT value mk_primitive_procedure(std::string name, std::function<value(value)> fn);
-NOLDOR_EXPORT value mk_primitive_procedure(std::function<value(value)> fn);
-NOLDOR_EXPORT value mk_primitive_macro(std::function<value(value)> mac);
+NOLDOR_EXPORT value mk_procedure(value parameters, value body, value environment);
+NOLDOR_EXPORT value procedure_parameters(value);
+NOLDOR_EXPORT value procedure_body(value);
+NOLDOR_EXPORT value procedure_environment(value);
 
-NOLDOR_EXPORT bool is_macro(value);
-NOLDOR_EXPORT bool is_primitive_macro(value);
+NOLDOR_EXPORT value mk_primitive_procedure(std::string name, value (*fptr)(value));
+NOLDOR_EXPORT value apply_primitive_procedure(value proc, value argl);
 
 NOLDOR_EXPORT value mk_vector(std::vector<value> elements);
-NOLDOR_EXPORT bool  is_vector(value v);
 
 NOLDOR_EXPORT value mk_string(std::string);
-NOLDOR_EXPORT bool  is_string(value v);
+NOLDOR_EXPORT std::string string_get(value);
 
 NOLDOR_EXPORT value mk_char(uint32_t c);
-NOLDOR_EXPORT bool  is_char(value v);
 
 NOLDOR_EXPORT value mk_eof_object();
-NOLDOR_EXPORT bool  is_eof_object(value v);
 
 NOLDOR_EXPORT value read(std::istream &input);
 

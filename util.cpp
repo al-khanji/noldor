@@ -38,18 +38,6 @@ void list_remove(list_t *elem)
     elem->prev = elem;
 }
 
-void register_function(const char *name, std::function<value(value)> fn)
-{
-    environment_define(globals::global_environment(),
-                       symbol(name),
-                       mk_primitive_procedure(name, std::move(fn)));
-}
-
-void register_type(metatype_t *metaobject)
-{
-    globals::register_type(metaobject);
-}
-
 template <class From, class To>
 struct value_converter;
 
@@ -86,6 +74,15 @@ struct value_converter<std::string, value>
     static value convert(std::string s)
     {
         return mk_string(std::move(s));
+    }
+};
+
+template <>
+struct value_converter<value, std::string>
+{
+    static std::string convert(value val)
+    {
+        return string_get(val);
     }
 };
 
@@ -171,23 +168,11 @@ void noldor_init()
 
         if (!initialized) {
 #define REGISTER_DISPATCHER(LISP_NAME, C_NAME, C_RETURN, ...) \
-    environment_define(globals::global_environment(), \
+    environment_define(environment_global(), \
                        symbol(LISP_NAME), \
                        mk_primitive_procedure(#C_NAME, C_NAME##_dispatcher));
             X_NOLDOR_SHARED_PROCEDURES(REGISTER_DISPATCHER)
 #undef REGISTER_DISPATCHER
-
-            register_type(globals::false_metaobject());
-            register_type(globals::true_metaobject());
-            register_type(globals::null_metaobject());
-            register_type(globals::pair_metaobject());
-            register_type(globals::environment_metaobject());
-            register_type(globals::primitive_function_metaobject());
-            register_type(globals::compound_function_metaobject());
-            register_type(globals::vector_metaobject());
-            register_type(globals::string_metaobject());
-            register_type(globals::char_metaobject());
-            register_type(globals::eof_metaobject());
 
             initialized = true;
         }
@@ -211,7 +196,17 @@ value assq(value obj, value list)
     return mk_bool(false);
 }
 
+bool eqv(value obj1, value obj2)
+{
+    return uint64_t(obj1) == uint64_t(obj2);
+}
+
 bool eq(value obj1, value obj2)
+{
+    return uint64_t(obj1) == uint64_t(obj2);
+}
+
+bool equal(value obj1, value obj2)
 {
     return uint64_t(obj1) == uint64_t(obj2);
 }
@@ -290,16 +285,16 @@ struct numeric_op<reflect_operant, T>
 {
     static value add(value a, value b)
     {
-        if (object_metaobject(a)->add)
-            return object_metaobject(a)->add(a, b);
+//        if (object_metaobject(a)->add)
+//            return object_metaobject(a)->add(a, b);
 
         throw noldor::type_error("cannot compute (+ " + printable(a) + " " + printable(b) + " )", list(a, b));
     }
 
     static value sub(value a, value b)
     {
-        if (object_metaobject(a)->sub)
-            return object_metaobject(a)->sub(a, b);
+//        if (object_metaobject(a)->sub)
+//            return object_metaobject(a)->sub(a, b);
 
         throw noldor::type_error("cannot compute (- " + printable(a) + " " + printable(b) + " )", list(a, b));
     }
@@ -310,16 +305,16 @@ struct numeric_op<T, reflect_operant>
 {
     static value add(value a, value b)
     {
-        if (object_metaobject(b)->add)
-            return object_metaobject(b)->add(b, a);
+//        if (object_metaobject(b)->add)
+//            return object_metaobject(b)->add(b, a);
 
         throw noldor::type_error("cannot compute (+ " + printable(a) + " " + printable(b) + " )", list(a, b));
     }
 
     static value sub(value a, value b)
     {
-        if (object_metaobject(b)->sub)
-            return object_metaobject(b)->sub(b, a);
+//        if (object_metaobject(b)->sub)
+//            return object_metaobject(b)->sub(b, a);
 
         throw noldor::type_error("cannot compute (- " + printable(a) + " " + printable(b) + " )", list(a, b));
     }
@@ -330,22 +325,22 @@ struct numeric_op<reflect_operant, reflect_operant>
 {
     static value add(value a, value b)
     {
-        if (object_metaobject(a)->add)
-            return object_metaobject(a)->add(a, b);
+//        if (object_metaobject(a)->add)
+//            return object_metaobject(a)->add(a, b);
 
-        if (object_metaobject(b)->add)
-            return object_metaobject(b)->add(b, a);
+//        if (object_metaobject(b)->add)
+//            return object_metaobject(b)->add(b, a);
 
         throw noldor::type_error("cannot compute (+ " + printable(a) + " " + printable(b) + " )", list(a, b));
     }
 
     static value sub(value a, value b)
     {
-        if (object_metaobject(a)->sub)
-            return object_metaobject(a)->sub(a, b);
+//        if (object_metaobject(a)->sub)
+//            return object_metaobject(a)->sub(a, b);
 
-        if (object_metaobject(b)->sub)
-            return object_metaobject(b)->sub(b, a);
+//        if (object_metaobject(b)->sub)
+//            return object_metaobject(b)->sub(b, a);
 
         throw noldor::type_error("cannot compute (- " + printable(a) + " " + printable(b) + " )", list(a, b));
     }
@@ -452,146 +447,6 @@ std::string printable(value val)
     }
 
     return metaobject->repr(val);
-}
-
-value caar(value obj)
-{
-    return car(car(obj));
-}
-
-value cadr(value obj)
-{
-    return car(cdr(obj));
-}
-
-value cdar(value obj)
-{
-    return cdr(car(obj));
-}
-
-value cddr(value obj)
-{
-    return cdr(cdr(obj));
-}
-
-value caaar(value obj)
-{
-    return car(caar(obj));
-}
-
-value caadr(value obj)
-{
-    return car(cadr(obj));
-}
-
-value cadar(value obj)
-{
-    return car(cdar(obj));
-}
-
-value caddr(value obj)
-{
-    return car(cddr(obj));
-}
-
-value cdaar(value obj)
-{
-    return cdr(caar(obj));
-}
-
-value cdadr(value obj)
-{
-    return cdr(cadr(obj));
-}
-
-value cddar(value obj)
-{
-    return cdr(cdar(obj));
-}
-
-value cdddr(value obj)
-{
-    return cdr(cddr(obj));
-}
-
-value caaaar(value obj)
-{
-    return car(caaar(obj));
-}
-
-value caaadr(value obj)
-{
-    return car(caadr(obj));
-}
-
-value caadar(value obj)
-{
-    return car(cadar(obj));
-}
-
-value caaddr(value obj)
-{
-    return car(caddr(obj));
-}
-
-value cadaar(value obj)
-{
-    return car(cdaar(obj));
-}
-
-value cadadr(value obj)
-{
-    return car(cdadr(obj));
-}
-
-value caddar(value obj)
-{
-    return car(cddar(obj));
-}
-
-value cadddr(value obj)
-{
-    return car(cdddr(obj));
-}
-
-value cdaaar(value obj)
-{
-    return cdr(caaar(obj));
-}
-
-value cdaadr(value obj)
-{
-    return cdr(caadr(obj));
-}
-
-value cdadar(value obj)
-{
-    return cdr(cadar(obj));
-}
-
-value cdaddr(value obj)
-{
-    return cdr(caddr(obj));
-}
-
-value cddaar(value obj)
-{
-    return cdr(cdaar(obj));
-}
-
-value cddadr(value obj)
-{
-    return cdr(cdadr(obj));
-}
-
-value cdddar(value obj)
-{
-    return cdr(cddar(obj));
-}
-
-value cddddr(value obj)
-{
-    return cdr(cdddr(obj));
 }
 
 std::ostream & operator << (std::ostream & os, value val)
