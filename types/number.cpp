@@ -219,7 +219,7 @@ static inline OperandType numeric_operand_type(value v)
         break;                                                                 \
     }                                                                          \
 
-value add(value argl, dot_tag)
+value add(dot_tag, value argl)
 {
 	value result = mk_int(0);
 
@@ -232,7 +232,7 @@ value add(value argl, dot_tag)
 	return result;
 }
 
-value sub(value argl, dot_tag)
+value sub(dot_tag, value argl)
 {
 	check_type(is_pair, argl, "sub: expected at least one argument");
 	
@@ -248,7 +248,7 @@ value sub(value argl, dot_tag)
 	return result;
 }
 
-value mul(value argl, dot_tag)
+value mul(dot_tag, value argl)
 {
 	value result = mk_int(1);
 
@@ -261,7 +261,7 @@ value mul(value argl, dot_tag)
 	return result;
 }
 
-value div(value argl, dot_tag)
+value div(dot_tag, value argl)
 {
 	check_type(is_pair, argl, "div: expected at least one argument");
 	

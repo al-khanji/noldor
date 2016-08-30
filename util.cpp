@@ -139,12 +139,12 @@ struct arg_converter<T>
 };
 
 template <>
-struct arg_converter<value, dot_tag>
+struct arg_converter<dot_tag, value>
 {
     template <class... Accumulated>
     static auto get(std::tuple<Accumulated...> &&acc, value argl)
     {
-        return std::tuple_cat(std::move(acc), std::make_tuple(argl, dot_tag{}));
+        return std::tuple_cat(std::move(acc), std::make_tuple(dot_tag{}, argl));
     }
 };
 

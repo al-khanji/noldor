@@ -190,11 +190,10 @@ value append(value x, value y)
     return cons(car(x), append(cdr(x), y));
 }
 
-value list(value argl, dot_tag)
+value list(dot_tag, value argl)
 {
     return argl;
 }
-
 
 value caar(value obj)
 {

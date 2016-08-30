@@ -715,7 +715,7 @@ MAKE_LABEL(ev_definition_1)
 EXIT_INTERPRETER
 }
 
-value apply(value proc, value argl, dot_tag)
+value apply(value proc, dot_tag, value argl)
 {
     if (is_primitive_procedure(proc))
         return apply_primitive_procedure(proc, argl);

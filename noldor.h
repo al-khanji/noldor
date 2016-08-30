@@ -190,10 +190,10 @@ struct NOLDOR_EXPORT dot_tag {};
     X("integer?",                   is_int,             bool,           value         ) \
     X("double?",                    is_double,          bool,           value         ) \
     X("number?",                    is_number,          bool,           value         ) \
-    X("+",                          add,                value,          value, dot_tag) \
-    X("-",                          sub,                value,          value, dot_tag) \
-    X("*",                          mul,                value,          value, dot_tag) \
-    X("/",                          div,                value,          value, dot_tag) \
+    X("+",                          add,                value,          dot_tag, value) \
+    X("-",                          sub,                value,          dot_tag, value) \
+    X("*",                          mul,                value,          dot_tag, value) \
+    X("/",                          div,                value,          dot_tag, value) \
     X("boolean?",                   is_bool,            bool,           value         ) \
     X("not",                        is_false,           bool,           value         ) \
     X("pair?",                      is_pair,            bool,           value         ) \
@@ -232,7 +232,7 @@ struct NOLDOR_EXPORT dot_tag {};
     X("cddddr",                     cddddr,             value,          value         ) \
     X("null?",                      is_null,            bool,           value         ) \
     X("list?",                      is_list,            bool,           value         ) \
-    X("list",                       list,               value,          value, dot_tag) \
+    X("list",                       list,               value,          dot_tag, value) \
     X("append",                     append,             value,          value, value  ) \
     X("assq",                       assq,               value,          value, value  ) \
     X("symbol?",                    is_symbol,          bool,           value         ) \
@@ -244,7 +244,7 @@ struct NOLDOR_EXPORT dot_tag {};
     X("procedure?",                 is_procedure,       bool,           value         ) \
     X("primitive-procedure?",       is_primitive_procedure, bool,       value         ) \
     X("compound-procedure?",        is_compound_procedure,  bool,       value         ) \
-    X("apply",                      apply,              value,          value, value, dot_tag    ) \
+    X("apply",                      apply,              value,          value, dot_tag, value ) \
     X("environment?",               is_environment,     bool,           value         ) \
     X("eval",                       eval,               value,          value, value  ) \
     X("eof-object?",                is_eof_object,      bool,           value         ) \
