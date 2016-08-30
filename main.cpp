@@ -16,10 +16,16 @@ int main(int, char **)
         try {
             std::cout << "\u03BB :: ";
             auto exp = read(std::cin);
+
+            if (is_eof_object(exp)) {
+                std::cout << std::endl << "\u203B" << std::endl;
+                break;
+            }
+
             auto result = eval(exp, env);
             std::cout << "  \u2971 " << result << std::endl;
         } catch (std::exception &e) {
-            std::cerr << e.what() << std::endl;
+            std::cerr << std::endl << e.what() << std::endl;
         }
     }
 
