@@ -25,4 +25,18 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "noldor.h"
 
-namespace noldor {}
+using namespace noldor;
+
+int main(int, char **)
+{
+    noldor_init();
+
+    auto env = mk_environment();
+
+    scope sc;
+    sc.add(env);
+
+    run_gc();
+
+    return 0;
+}
