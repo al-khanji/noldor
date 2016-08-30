@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+
 namespace noldor {
 
 noldor_exception::noldor_exception(std::string msg)

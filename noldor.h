@@ -220,9 +220,14 @@ struct NOLDOR_EXPORT dot_tag {};
     X("tagged-list?",               is_tagged_list,     bool,           value, value  ) \
     X("garbage-collect",            run_gc,             int                           )
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+
 #define DECLARE_C_FUNCTION(LISP_NAME, C_NAME, C_RETURN, ...) NOLDOR_EXPORT C_RETURN C_NAME (__VA_ARGS__);
 X_NOLDOR_SHARED_PROCEDURES(DECLARE_C_FUNCTION)
 #undef DECLARE_C_FUNCTION
+
+#pragma clang diagnostic pop
 
 #define SYMBOL_LITERAL(NAME) [] () -> value { static value sym = symbol(#NAME); return sym; } ()
 

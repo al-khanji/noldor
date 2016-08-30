@@ -73,7 +73,7 @@ value mk_environment(value outer)
     if (is_null(outer))
         outer = environment_global();
 
-    return object_allocate<environment_t>(environment_metaobject(), { outer });
+    return object_allocate<environment_t>(environment_metaobject(), { outer, {} });
 }
 
 value mk_empty_environment()

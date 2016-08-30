@@ -13,6 +13,9 @@
 #include <mutex>
 #include <thread>
 
+#pragma clang diagnostic ignored "-Wgnu-label-as-value"
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+
 namespace noldor {
 
 #define X(n) #n,
