@@ -46,8 +46,7 @@ static std::string primitive_procedure_repr(value val)
 {
     auto data = object_data_as<primitive_procedure_t *>(val);
 
-    std::string str;
-    std::stringstream stream(str);
+    std::stringstream stream;
 
     stream << "<#primitive-function";
     if (!data->name.empty())

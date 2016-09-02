@@ -105,6 +105,18 @@ public:
     using base_error::base_error;
 };
 
+class NOLDOR_EXPORT file_error : public base_error
+{
+public:
+    using base_error::base_error;
+};
+
+class NOLDOR_EXPORT variable_error : public base_error
+{
+public:
+    using base_error::base_error;
+};
+
 class NOLDOR_EXPORT runtime_error : public noldor_exception
 {
 public:
@@ -127,22 +139,23 @@ inline void check_type(bool (*predicate)(uint64_t), uint64_t val, const char *ms
     if (!predicate(val)) throw noldor::type_error(msg, val);
 }
 
-struct scope_data;
-struct NOLDOR_EXPORT scope
-{
-    scope();
-    ~scope();
-
-    void add(value &val);
-    void remove(value &val);
-
-private:
-    std::unique_ptr<scope_data> data;
-};
-
 constexpr uint8_t METATYPE_VERSION = 0;
 
 typedef void (*gc_visit_fn_t)(value *child, void *data);
+
+struct NOLDOR_EXPORT list_t {
+    list_t *next = this;
+    list_t *prev = this;
+};
+
+struct NOLDOR_EXPORT scope
+{
+    scope();
+    virtual ~scope();
+    virtual void visit(gc_visit_fn_t visitor, void *data) = 0;
+
+    list_t gc_scopes;
+};
 
 enum typeflags {
     typeflags_none      = 0x0,
@@ -181,76 +194,124 @@ inline T object_data_as(value obj)
     return static_cast<T>(object_data(obj));
 }
 
+struct char_t {
+    uint32_t character;
+};
+
 struct NOLDOR_EXPORT dot_tag {};
 
 #define X_NOLDOR_SHARED_PROCEDURES(X) \
-    X("eqv?",                       eqv,                bool,           value, value  ) \
-    X("eq?",                        eq,                 bool,           value, value  ) \
-    X("equal?",                     equal,              bool,           value, value  ) \
-    X("integer?",                   is_int,             bool,           value         ) \
-    X("double?",                    is_double,          bool,           value         ) \
-    X("number?",                    is_number,          bool,           value         ) \
-    X("+",                          add,                value,          dot_tag, value) \
-    X("-",                          sub,                value,          dot_tag, value) \
-    X("*",                          mul,                value,          dot_tag, value) \
-    X("/",                          div,                value,          dot_tag, value) \
-    X("boolean?",                   is_bool,            bool,           value         ) \
-    X("not",                        is_false,           bool,           value         ) \
-    X("pair?",                      is_pair,            bool,           value         ) \
-    X("cons",                       cons,               value,          value, value  ) \
-    X("car",                        car,                value,          value         ) \
-    X("cdr",                        cdr,                value,          value         ) \
-    X("set-car!",                   set_car,            value,          value, value  ) \
-    X("set-cdr!",                   set_cdr,            value,          value, value  ) \
-    X("caar",                       caar,               value,          value         ) \
-    X("cadr",                       cadr,               value,          value         ) \
-    X("cdar",                       cdar,               value,          value         ) \
-    X("cddr",                       cddr,               value,          value         ) \
-    X("caaar",                      caaar,              value,          value         ) \
-    X("caadr",                      caadr,              value,          value         ) \
-    X("cadar",                      cadar,              value,          value         ) \
-    X("caddr",                      caddr,              value,          value         ) \
-    X("cdaar",                      cdaar,              value,          value         ) \
-    X("cdadr",                      cdadr,              value,          value         ) \
-    X("cddar",                      cddar,              value,          value         ) \
-    X("cdddr",                      cdddr,              value,          value         ) \
-    X("caaaar",                     caaaar,             value,          value         ) \
-    X("caaadr",                     caaadr,             value,          value         ) \
-    X("caadar",                     caadar,             value,          value         ) \
-    X("caaddr",                     caaddr,             value,          value         ) \
-    X("cadaar",                     cadaar,             value,          value         ) \
-    X("cadadr",                     cadadr,             value,          value         ) \
-    X("caddar",                     caddar,             value,          value         ) \
-    X("cadddr",                     cadddr,             value,          value         ) \
-    X("cdaaar",                     cdaaar,             value,          value         ) \
-    X("cdaadr",                     cdaadr,             value,          value         ) \
-    X("cdadar",                     cdadar,             value,          value         ) \
-    X("cdaddr",                     cdaddr,             value,          value         ) \
-    X("cddaar",                     cddaar,             value,          value         ) \
-    X("cddadr",                     cddadr,             value,          value         ) \
-    X("cdddar",                     cdddar,             value,          value         ) \
-    X("cddddr",                     cddddr,             value,          value         ) \
-    X("null?",                      is_null,            bool,           value         ) \
-    X("list?",                      is_list,            bool,           value         ) \
-    X("list",                       list,               value,          dot_tag, value) \
-    X("append",                     append,             value,          value, value  ) \
-    X("assq",                       assq,               value,          value, value  ) \
-    X("symbol?",                    is_symbol,          bool,           value         ) \
-    X("symbol->string",             symbol_to_string,   std::string,    value         ) \
-    X("string->symbol",             symbol,             value,          std::string   ) \
-    X("char?",                      is_char,            bool,           value         ) \
-    X("string?",                    is_string,          bool,           value         ) \
-    X("vector?",                    is_vector,          bool,           value         ) \
-    X("procedure?",                 is_procedure,       bool,           value         ) \
-    X("primitive-procedure?",       is_primitive_procedure, bool,       value         ) \
-    X("compound-procedure?",        is_compound_procedure,  bool,       value         ) \
-    X("apply",                      apply,              value,          value, dot_tag, value ) \
-    X("environment?",               is_environment,     bool,           value         ) \
-    X("eval",                       eval,               value,          value, value  ) \
-    X("eof-object?",                is_eof_object,      bool,           value         ) \
-    X("external-representation",    printable,          std::string,    value         ) \
-    X("tagged-list?",               is_tagged_list,     bool,           value, value  ) \
-    X("garbage-collect",            run_gc,             int                           )
+    X("eqv?",                       eqv,                        bool,           value, value            ) \
+    X("eq?",                        eq,                         bool,           value, value            ) \
+    X("equal?",                     equal,                      bool,           value, value            ) \
+    X("number?",                    is_number,                  bool,           value                   ) \
+    X("real?",                      is_double,                  bool,           value                   ) \
+    X("integer?",                   is_int,                     bool,           value                   ) \
+    X("=",                          num_eq,                     bool,           dot_tag, value          ) \
+    X("<",                          num_st,                     bool,           dot_tag, value          ) \
+    X(">",                          num_gt,                     bool,           dot_tag, value          ) \
+    X("<=",                         num_ste,                    bool,           dot_tag, value          ) \
+    X(">=",                         num_gte,                    bool,           dot_tag, value          ) \
+    X("zero?",                      is_zero,                    bool,           value                   ) \
+    X("positive?",                  is_positive,                bool,           value                   ) \
+    X("negative?",                  is_negative,                bool,           value                   ) \
+    X("odd?",                       is_odd,                     bool,           value                   ) \
+    X("even?",                      is_even,                    bool,           value                   ) \
+    X("max",                        max,                        value,          dot_tag, value          ) \
+    X("min",                        min,                        value,          dot_tag, value          ) \
+    X("+",                          add,                        value,          dot_tag, value          ) \
+    X("-",                          sub,                        value,          dot_tag, value          ) \
+    X("*",                          mul,                        value,          dot_tag, value          ) \
+    X("/",                          div,                        value,          dot_tag, value          ) \
+    X("boolean?",                   is_bool,                    bool,           value                   ) \
+    X("not",                        is_false,                   bool,           value                   ) \
+    X("pair?",                      is_pair,                    bool,           value                   ) \
+    X("cons",                       cons,                       value,          value, value            ) \
+    X("car",                        car,                        value,          value                   ) \
+    X("cdr",                        cdr,                        value,          value                   ) \
+    X("set-car!",                   set_car,                    value,          value, value            ) \
+    X("set-cdr!",                   set_cdr,                    value,          value, value            ) \
+    X("caar",                       caar,                       value,          value                   ) \
+    X("cadr",                       cadr,                       value,          value                   ) \
+    X("cdar",                       cdar,                       value,          value                   ) \
+    X("cddr",                       cddr,                       value,          value                   ) \
+    X("caaar",                      caaar,                      value,          value                   ) \
+    X("caadr",                      caadr,                      value,          value                   ) \
+    X("cadar",                      cadar,                      value,          value                   ) \
+    X("caddr",                      caddr,                      value,          value                   ) \
+    X("cdaar",                      cdaar,                      value,          value                   ) \
+    X("cdadr",                      cdadr,                      value,          value                   ) \
+    X("cddar",                      cddar,                      value,          value                   ) \
+    X("cdddr",                      cdddr,                      value,          value                   ) \
+    X("caaaar",                     caaaar,                     value,          value                   ) \
+    X("caaadr",                     caaadr,                     value,          value                   ) \
+    X("caadar",                     caadar,                     value,          value                   ) \
+    X("caaddr",                     caaddr,                     value,          value                   ) \
+    X("cadaar",                     cadaar,                     value,          value                   ) \
+    X("cadadr",                     cadadr,                     value,          value                   ) \
+    X("caddar",                     caddar,                     value,          value                   ) \
+    X("cadddr",                     cadddr,                     value,          value                   ) \
+    X("cdaaar",                     cdaaar,                     value,          value                   ) \
+    X("cdaadr",                     cdaadr,                     value,          value                   ) \
+    X("cdadar",                     cdadar,                     value,          value                   ) \
+    X("cdaddr",                     cdaddr,                     value,          value                   ) \
+    X("cddaar",                     cddaar,                     value,          value                   ) \
+    X("cddadr",                     cddadr,                     value,          value                   ) \
+    X("cdddar",                     cdddar,                     value,          value                   ) \
+    X("cddddr",                     cddddr,                     value,          value                   ) \
+    X("null?",                      is_null,                    bool,           value                   ) \
+    X("list?",                      is_list,                    bool,           value                   ) \
+    X("list",                       list,                       value,          dot_tag, value          ) \
+    X("length",                     length,                     int32_t,        value                   ) \
+    X("append",                     append,                     value,          value, value            ) \
+    X("reverse",                    reverse,                    value,          value                   ) \
+    X("list-tail",                  list_tail,                  value,          value, int32_t          ) \
+    X("assq",                       assq,                       value,          value, value            ) \
+    X("symbol?",                    is_symbol,                  bool,           value                   ) \
+    X("symbol->string",             symbol_to_string,           std::string,    value                   ) \
+    X("string->symbol",             symbol,                     value,          std::string             ) \
+    X("char?",                      is_char,                    bool,           value                   ) \
+    X("string?",                    is_string,                  bool,           value                   ) \
+    X("vector?",                    is_vector,                  bool,           value                   ) \
+    X("procedure?",                 is_procedure,               bool,           value                   ) \
+    X("primitive-procedure?",       is_primitive_procedure,     bool,           value                   ) \
+    X("compound-procedure?",        is_compound_procedure,      bool,           value                   ) \
+    X("apply",                      apply,                      value,          value, dot_tag, value   ) \
+    X("environment?",               is_environment,             bool,           value                   ) \
+    X("eval",                       eval,                       value,          value, value            ) \
+    X("input-port?",                is_input_port,              bool,           value                   ) \
+    X("output-port?",               is_output_port,             bool,           value                   ) \
+    X("textual-port?",              is_textual_port,            bool,           value                   ) \
+    X("binary-port?",               is_binary_port,             bool,           value                   ) \
+    X("port?",                      is_port,                    bool,           value                   ) \
+    X("input-port-open?",           is_input_port_open,         bool,           value                   ) \
+    X("output-port-open?",          is_output_port_open,        bool,           value                   ) \
+    X("file-port?",                 is_file_port,               bool,           value                   ) \
+    X("open-input-file",            open_input_file,            value,          std::string             ) \
+    X("open-binary-input-file",     open_binary_input_file,     value,          std::string             ) \
+    X("open-output-file",           open_output_file,           value,          std::string             ) \
+    X("open-binary-output-file",    open_binary_output_file,    value,          std::string             ) \
+    X("close-port",                 close_port,                 bool,           value                   ) \
+    X("close-input-port",           close_input_port,           bool,           value                   ) \
+    X("close-output-port",          close_output_port,          bool,           value                   ) \
+    X("string-port?",               is_string_port,             bool,           value                   ) \
+    X("open-input-string",          open_input_string,          value,          std::string             ) \
+    X("open-output-string",         open_output_string,         value                                   ) \
+    X("get-output-string",          get_output_string,          std::string,    value                   ) \
+    X("read",                       read,                       value,          dot_tag, value          ) \
+    X("read-char",                  read_char,                  value,          dot_tag, value          ) \
+    X("peek-char",                  peek_char,                  value,          dot_tag, value          ) \
+    X("read-line",                  read_line,                  value,          dot_tag, value          ) \
+    X("eof-object?",                is_eof_object,              bool,           value                   ) \
+    X("eof-object" ,                mk_eof_object,              value                                   ) \
+    X("char-ready?",                is_char_ready,              bool,           dot_tag, value          ) \
+    X("external-representation",    printable,                  std::string,    value                   ) \
+    X("tagged-list?",               is_tagged_list,             bool,           value, value            ) \
+    X("garbage-collect",            run_gc,                     int                                     )
+
+//    X("current-input-port",         current_input_port,         value                                   )
+//    X("current-output-port",        current_output_port,        value                                   )
+//    X("current-error-port",         current_error_port,         value                                   )
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
@@ -295,13 +356,22 @@ NOLDOR_EXPORT value mk_primitive_procedure(std::string name, value (*fptr)(value
 NOLDOR_EXPORT value apply_primitive_procedure(value proc, value argl);
 
 NOLDOR_EXPORT value mk_vector(std::vector<value> elements);
+NOLDOR_EXPORT std::vector<value> vector_get(value vec);
 
 NOLDOR_EXPORT value mk_string(std::string);
 NOLDOR_EXPORT std::string string_get(value);
 
 NOLDOR_EXPORT value mk_char(uint32_t c);
+NOLDOR_EXPORT uint32_t char_get(value);
 
-NOLDOR_EXPORT value mk_eof_object();
+NOLDOR_EXPORT value mk_input_port(int fd);
+NOLDOR_EXPORT value mk_input_port(FILE *);
+NOLDOR_EXPORT value read(value);
+NOLDOR_EXPORT value read_char(value);
+NOLDOR_EXPORT value peek_char(value);
+NOLDOR_EXPORT value read_line(value);
+NOLDOR_EXPORT bool is_char_ready(value port);
+
 
 NOLDOR_EXPORT value read(std::istream &input);
 

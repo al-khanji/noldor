@@ -87,11 +87,20 @@ struct value_converter<bool, value>
 };
 
 template <>
-struct value_converter<int, value>
+struct value_converter<int32_t, value>
 {
-    static value convert(int i)
+    static value convert(int32_t i)
     {
         return mk_int(i);
+    }
+};
+
+template <>
+struct value_converter<value, int32_t>
+{
+    static int32_t convert(value val)
+    {
+        return to_int(val);
     }
 };
 
@@ -110,6 +119,15 @@ struct value_converter<value, std::string>
     static std::string convert(value val)
     {
         return string_get(val);
+    }
+};
+
+template <>
+struct value_converter<char_t, value>
+{
+    static value convert(char_t c)
+    {
+        return mk_char(c.character);
     }
 };
 
@@ -221,7 +239,16 @@ value assq(value obj, value list)
 
 bool eqv(value obj1, value obj2)
 {
-    return uint64_t(obj1) == uint64_t(obj2);
+    if (eq(obj1, obj2))
+        return true;
+
+    if (object_metaobject(obj1) != object_metaobject(obj2))
+        return false;
+
+    if (is_char(obj1))
+        return char_get(obj1) == char_get(obj2);
+
+    return false;
 }
 
 bool eq(value obj1, value obj2)
@@ -231,7 +258,34 @@ bool eq(value obj1, value obj2)
 
 bool equal(value obj1, value obj2)
 {
-    return uint64_t(obj1) == uint64_t(obj2);
+    if (eq(obj1, obj2))
+        return true;
+
+    if (object_metaobject(obj1) != object_metaobject(obj2))
+        return false;
+
+    if (is_char(obj1))
+        return char_get(obj1) == char_get(obj2);
+
+    if (is_string(obj1))
+        return string_get(obj1) == string_get(obj1);
+
+    if (is_vector(obj1))
+        return vector_get(obj1) == vector_get(obj2);
+
+    if (is_pair(obj1)) {
+        while (is_pair(obj1) && is_pair(obj2)) {
+            if (!equal(car(obj1), car(obj2)))
+                return false;
+
+            obj1 = cdr(obj1);
+            obj2 = cdr(obj2);
+        }
+
+        return equal(obj1, obj2);
+    }
+
+    return false;
 }
 
 std::string printable(value val)
@@ -248,8 +302,7 @@ std::string printable(value val)
     auto metaobject = object_metaobject(val);
 
     if (!metaobject || !metaobject->repr) {
-        std::string string;
-        std::stringstream stream(string);
+        std::stringstream stream;
 
         if (!metaobject)
             stream << "<#unknown ";

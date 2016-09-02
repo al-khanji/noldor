@@ -28,10 +28,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 namespace noldor {
 
-struct char_t {
-    uint32_t character;
-};
-
 static void char_destruct(value val)
 {
     object_data_as<char_t *>(val)->~char_t();
@@ -102,9 +98,13 @@ static metatype_t *char_metaobject()
 
 value mk_char(uint32_t c)
 {
-    value obj = allocate(char_metaobject(), sizeof(char_t), alignof(char_t));
-    new (object_data(obj)) char_t { c };
-    return obj;
+    return object_allocate<char_t>(char_metaobject(), char_t { c });
+}
+
+uint32_t char_get(value val)
+{
+    check_type(is_char, val, "expected character");
+    return object_data_as<char_t *>(val)->character;
 }
 
 bool is_char(value v)

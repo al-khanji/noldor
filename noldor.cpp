@@ -24,35 +24,53 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include "noldor.h"
+#include <stdio.h>
 #include <iostream>
 
 using namespace noldor;
+
+struct basic_scope : scope
+{
+    std::vector<value *> variables;
+
+    void visit(gc_visit_fn_t visitor, void *data) override
+    {
+        for (value *v : variables)
+            visitor(v, data);
+    }
+};
 
 int main(int, char **)
 {
     noldor_init();
 
     auto env = mk_environment();
+    auto port = mk_input_port(0);
 
-    scope sc;
-    sc.add(env);
+    basic_scope sc;
+    sc.variables =  { &env, &port };
 
-    while (std::cin) {
+    puts("\u262F");
+
+    while (true) {
         try {
-            std::cout << "\u03BB :: ";
-            auto exp = read(std::cin);
+            printf("\u03BB :: ");
+            fflush(stdout);
+            auto exp = read(port);
 
-            if (is_eof_object(exp)) {
-                std::cout << std::endl << "\u203B" << std::endl;
+            if (is_eof_object(exp))
                 break;
-            }
 
             auto result = eval(exp, env);
-            std::cout << "  \u2971 " << result << std::endl;
+            printf("  \u2971 %s\n", printable(result).c_str());
+            fflush(stdout);
         } catch (std::exception &e) {
-            std::cerr << std::endl << e.what() << std::endl;
+            fprintf(stderr, "\n%s\n", e.what());
+            fflush(stderr);
         }
     }
+
+    puts("\n\u203B");
 
     return 0;
 }

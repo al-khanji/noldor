@@ -57,9 +57,8 @@ int run_gc()
     for (gc_header &header : INTRUSIVE_LIST_LOOP(allocations, gc_header, gc_objects))
         header.gc_flags = dead_mark;
 
-    for (scope_data &scope : INTRUSIVE_LIST_LOOP(scopes, scope_data, gc_scopes))
-        for (value *var : scope.variables)
-            gc_mark_recursive(var, &live_mark);
+    for (scope &sc : INTRUSIVE_LIST_LOOP(scopes, scope, gc_scopes))
+        sc.visit(gc_mark_recursive, &live_mark);
 
     auto *gc_status = globals::gc_status_info();
 
@@ -74,10 +73,11 @@ int run_gc()
 
             n_bytes_freed += header.alloc_size + header.data_offset;
 
+            list_remove(&header.gc_objects);
+
             if (header.metaobject->destruct)
                 header.metaobject->destruct(magic::from_pointer(&header));
 
-            list_remove(&header.gc_objects);
             free(&header);
 
             gc_status->n_objects_allocated -= 1;
@@ -124,38 +124,6 @@ value allocate(metatype_t *metaobject, size_t size, size_t alignment)
     return magic::from_pointer(mem);
 }
 
-scope::scope() : data(new scope_data)
-{
-    list_insert(globals::scopes(), &data->gc_scopes);
-}
-
-scope::~scope()
-{
-    list_remove(&data->gc_scopes);
-}
-
-void scope::add(value &v)
-{
-    for (const value *vv : data->variables)
-        if (eq(v, *vv))
-            return;
-
-    data->variables.emplace_back(&v);
-}
-
-void scope::remove(value &v)
-{
-    auto i = data->variables.begin();
-
-    while (i != data->variables.end()) {
-        if (eq(v, **i)) {
-            data->variables.erase(i);
-        } else {
-            ++i;
-        }
-    }
-}
-
 list_t *globals::scopes()
 {
     static list_t scopes;
@@ -196,5 +164,17 @@ metatype_t *object_metaobject(value obj)
     auto header = static_cast<gc_header *>(magic::get_pointer(obj));
     return header->metaobject;
 }
+
+scope::scope()
+{
+    list_insert(globals::scopes(), &gc_scopes);
+}
+
+
+scope::~scope()
+{
+    list_remove(&gc_scopes);
+}
+
 
 } // namespace noldor

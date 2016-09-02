@@ -430,6 +430,7 @@ auto trace_args = [] (std::initializer_list<std::string> parts) -> std::string {
 #define OP(O, ...)         O(__VA_ARGS__)
 
     thread_t thread;
+    thread_scope_t tsc(thread);
 
     ASSIGN(exp, exp)
     ASSIGN(env, env)

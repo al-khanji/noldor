@@ -1,7 +1,6 @@
 LIBRARY_SOURCES := \
 	interpreter.cpp \
 	memory.cpp \
-	parser.cpp \
 	util.cpp \
 	types/bool.cpp \
 	types/char.cpp \
@@ -13,7 +12,8 @@ LIBRARY_SOURCES := \
 	types/procedure.cpp \
 	types/string.cpp \
 	types/symbol.cpp \
-	types/vector.cpp
+	types/vector.cpp \
+	types/port.cpp
 LIBRARY_OBJECTS := \
 	$(LIBRARY_SOURCES:.cpp=.o)
 LIBRARY_HEADERS := \

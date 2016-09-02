@@ -79,4 +79,9 @@ bool is_vector(value v)
     return object_metaobject(v) == vector_metaobject();
 }
 
+std::vector<value> vector_get(value vec)
+{
+    return object_data_as<vector_t *>(vec)->elements;
+}
+
 }

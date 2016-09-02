@@ -97,8 +97,7 @@ static void pair_gc_visit(value val, gc_visit_fn_t visitor, void *data)
 
 static std::string pair_repr(value val)
 {
-    std::string repr;
-    std::stringstream stream(repr);
+    std::stringstream stream;
 
     while (!is_null(val)) {
         if (is_pair(val)) {
@@ -112,7 +111,7 @@ static std::string pair_repr(value val)
 
     stream << ")";
 
-    repr = stream.str();
+    std::string repr = stream.str();
     repr[0] = '(';
 
     return repr;
@@ -143,25 +142,25 @@ bool is_pair(value v)
 value car(value v)
 {
     check_type(is_pair, v, "car: expected pair");
-    return reinterpret_cast<pair_t *>(object_data(v))->car;
+    return object_data_as<pair_t *>(v)->car;
 }
 
 value cdr(value v)
 {
     check_type(is_pair, v, "cdr: expected pair");
-    return reinterpret_cast<pair_t *>(object_data(v))->cdr;
+    return object_data_as<pair_t *>(v)->cdr;
 }
 
 value set_car(value pair, value val)
 {
     check_type(is_pair, pair, "set_car: expected pair");
-    return reinterpret_cast<pair_t *>(object_data(pair))->car = val;
+    return object_data_as<pair_t *>(pair)->car = val;
 }
 
 value set_cdr(value pair, value val)
 {
     check_type(is_pair, pair, "set_cdr: expected pair");
-    return reinterpret_cast<pair_t *>(object_data(pair))->cdr = val;
+    return object_data_as<pair_t *>(pair)->cdr = val;
 }
 
 // list utilities
@@ -182,12 +181,61 @@ bool is_list(value v)
     return is_null(v);
 }
 
+int32_t length(value list)
+{
+    std::unordered_set<uint64_t> encountered_nodes;
+
+    int32_t len = 0;
+
+    while (!is_null(list)) {
+        if (encountered_nodes.find(list) != encountered_nodes.end())
+            throw noldor::type_error("length: circular list", list);
+
+        ++len;
+        encountered_nodes.insert(list);
+        list = cdr(list);
+    }
+
+    return len;
+}
+
+
 value append(value x, value y)
 {
     if (is_null(x))
         return y;
 
     return cons(car(x), append(cdr(x), y));
+}
+
+value reverse(value list)
+{
+    std::unordered_set<uint64_t> encountered_nodes;
+
+    value reversed = noldor::list();
+
+    while (!is_null(list)) {
+        if (encountered_nodes.find(list) != encountered_nodes.end())
+            throw noldor::type_error("reverse: circular list", list);
+
+        reversed = cons(car(list), reversed);
+        encountered_nodes.insert(list);
+        list = cdr(list);
+    }
+
+    return reversed;
+}
+
+value list_tail(value list, int32_t k)
+{
+    check_type(is_pair, list, "expected a list");
+    if (k < 0)
+        throw noldor::type_error("list_tail: expected positive k", mk_int(k));
+
+    while (k--)
+        list = cdr(list);
+
+    return list;
 }
 
 value list(dot_tag, value argl)

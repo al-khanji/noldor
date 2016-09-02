@@ -34,7 +34,21 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <unordered_set>
 #include <unordered_map>
 
+#if defined(__APPLE__) || defined(__linux__) || defined(__unix__) || defined(_POSIX_VERSION)
+# define NOLDOR_POSIX 1
+# include <sys/types.h>
+# include <sys/uio.h>
+# include <unistd.h>
+# include <fcntl.h>
+#else
+# error unsupported platform
+#endif
+
 namespace noldor {
+
+#if NOLDOR_POSIX
+# define EINTR_SAFE(RES, OP, ...) do RES = OP(__VA_ARGS__); while (RES == -1 && errno == EINTR);
+#endif
 
 #define REGISTERS(X) \
     X(exp) \
@@ -57,11 +71,6 @@ NOLDOR_EXPORT extern const char * const regnames[N_REGISTERS];
 template <class C, size_t N>
 inline constexpr int array_size(C (&)[N])
 { return N; }
-
-struct NOLDOR_EXPORT list_t {
-    list_t *next = this;
-    list_t *prev = this;
-};
 
 NOLDOR_EXPORT void list_insert(list_t *list, list_t *elem);
 NOLDOR_EXPORT void list_remove(list_t *elem);
@@ -125,11 +134,6 @@ struct looper {
 
 #define INTRUSIVE_LIST_LOOP(LIST, TYPE, MEMBERNAME) looper<TYPE, offsetof(TYPE, MEMBERNAME)>(LIST)
 
-struct NOLDOR_EXPORT scope_data {
-    list_t gc_scopes;
-    std::vector<value *> variables;
-};
-
 struct NOLDOR_EXPORT thread_t {
     std::vector<uint64_t> stack;
     std::array<uint64_t, N_REGISTERS> registers;
@@ -156,6 +160,29 @@ struct NOLDOR_EXPORT thread_t {
     }
 };
 
+struct NOLDOR_EXPORT thread_scope_t : scope
+{
+    thread_t *thread = 0;
+
+    thread_scope_t(thread_t &th) : thread(&th) {}
+
+    void visit(gc_visit_fn_t visitor, void *data) override
+    {
+        if (!thread)
+            return;
+
+        for (uint64_t &regval : thread->registers) {
+            value *v = reinterpret_cast<value *>(&regval);
+            visitor(v, data);
+        }
+
+        for (uint64_t &stackval : thread->stack) {
+            value *v = reinterpret_cast<value *>(&stackval);
+            visitor(v, data);
+        }
+    }
+};
+
 struct NOLDOR_EXPORT gc_header {
     metatype_t *metaobject = nullptr;
 
@@ -166,11 +193,6 @@ struct NOLDOR_EXPORT gc_header {
     uint32_t alloc_size = 0;
 
     char data[1];
-};
-
-struct NOLDOR_EXPORT gc_mark_sweep_data {
-    uint32_t mark;
-    std::unordered_set<gc_header *> pending_garbage;
 };
 
 struct gc_status_info {

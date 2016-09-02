@@ -45,15 +45,14 @@ static void environment_gc_visit(value self, gc_visit_fn_t visitor, void *data)
     auto env = object_data_as<environment_t *>(self);
 
     for (auto &pair : env->symtab)
-        visitor(reinterpret_cast<value *>(&pair.second), data);
+        visitor(&pair.second, data);
 
-    visitor(reinterpret_cast<value *>(&env->outer), data);
+    visitor(&env->outer, data);
 }
 
 static std::string environment_repr(value val)
 {
-    std::string str;
-    std::stringstream stream(str);
+    std::stringstream stream;
 
     auto data = static_cast<environment_t *>(object_data(val));
 
@@ -136,7 +135,7 @@ value environment_get(value env, value sym)
     env = environment_find(env, sym);
 
     if (is_false(env))
-        return env;
+        throw variable_error("undefined variable", sym);
 
     auto data = static_cast<environment_t *>(object_data(env));
     return data->symtab.at(sym);
@@ -150,11 +149,11 @@ value environment_set(value env, value sym, value val)
     env = environment_find(env, sym);
 
     if (is_false(env))
-        return env;
+        throw variable_error("undefined variable", sym);
 
     auto data = static_cast<environment_t *>(object_data(env));
-    data->symtab.emplace(sym, val);
-    return val;;
+    data->symtab.at(sym) = val;
+    return val;
 }
 
 value environment_define(value env, value sym, value val)
@@ -163,52 +162,10 @@ value environment_define(value env, value sym, value val)
     check_type(is_symbol, sym, "environment_define: expected symbol as second argument");
 
     auto data = static_cast<environment_t *>(object_data(env));
-    data->symtab.emplace(sym, val);
+    auto res = data->symtab.emplace(sym, val);
+    if (!res.second)
+        data->symtab.at(sym) = val;
     return val;
 }
 
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
