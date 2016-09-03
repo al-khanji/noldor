@@ -582,17 +582,21 @@ value read(value port)
             case 'f':
             case '\\': {
                 std::string word = "#" + std::string(1, c);
-                next = peek_char(port);
-                while (!is_delimiter(next)) {
+
+                while (true) {
+                    next = peek_char(port);
+                    if (is_eof_object(next) || is_delimiter(next))
+                        break;
+
                     read_char(port);
                     word += std::string(1, char_get(next));
                 }
 
-                if (word == "#t" || word == "#true") {
+                if (word == "#t" || word == "#true")
                     return mk_bool(true);
-                } else if (word == "#f" || word == "#f") {
+                else if (word == "#f" || word == "#f")
                     return mk_bool(false);
-                } else if (word[1] == '\\') {
+                else if (word[1] == '\\') {
                     if (word.length() == 2) {
                         next = read_char(port);
                         if (!is_eof_object(next))
