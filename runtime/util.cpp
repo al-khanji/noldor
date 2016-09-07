@@ -131,6 +131,15 @@ struct value_converter<char_t, value>
     }
 };
 
+template <>
+struct value_converter<double, value>
+{
+    static value convert(double d)
+    {
+        return mk_double(d);
+    }
+};
+
 template <class...>
 struct arg_converter;
 
@@ -199,7 +208,7 @@ inline auto apply_tuple(FunType fn, std::tuple<Args...> &&arg_tuple)
 X_NOLDOR_SHARED_PROCEDURES(MAKE_C_FUNC_DISPATCHER)
 #undef MAKE_C_FUNC_DISPATCHER
 
-void noldor_init()
+void noldor_init(int argc, char **argv)
 {
     static std::mutex mutex;
     static bool initialized = false;
@@ -214,6 +223,12 @@ void noldor_init()
                        mk_primitive_procedure(#C_NAME, C_NAME##_dispatcher));
             X_NOLDOR_SHARED_PROCEDURES(REGISTER_DISPATCHER)
 #undef REGISTER_DISPATCHER
+
+            set_command_line(argc, argv);
+
+            environment_define(interaction_environment(), SYMBOL_LITERAL(current-input-port-value),  mk_input_port(STDIN_FILENO));
+            environment_define(interaction_environment(), SYMBOL_LITERAL(current-output-port-value), mk_input_port(STDOUT_FILENO));
+            environment_define(interaction_environment(), SYMBOL_LITERAL(current-error-port-value),  mk_input_port(STDERR_FILENO));
 
             initialized = true;
         }

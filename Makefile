@@ -1,13 +1,14 @@
 LIBRARY_SOURCES := \
-	interpreter.cpp \
-	memory.cpp \
-	util.cpp \
+	runtime/interpreter.cpp \
+	runtime/memory.cpp \
+	runtime/util.cpp \
+        runtime/vm.cpp \
+        runtime/system.cpp \
 	types/bool.cpp \
 	types/char.cpp \
 	types/cons.cpp \
 	types/environment.cpp \
 	types/eof_object.cpp \
-	types/macro.cpp \
 	types/number.cpp \
 	types/procedure.cpp \
 	types/string.cpp \
@@ -17,8 +18,8 @@ LIBRARY_SOURCES := \
 LIBRARY_OBJECTS := \
 	$(LIBRARY_SOURCES:.cpp=.o)
 LIBRARY_HEADERS := \
-	noldor.h \
-	noldor_impl.h
+	include/noldor.h \
+	include/noldor_impl.h
 
 NOLDOR_SOURCES := noldor.cpp
 NOLDOR_OBJECTS := $(NOLDOR_SOURCES:.cpp=.o)
@@ -27,7 +28,7 @@ NOLDOR_TEST_SOURCES := noldor_tests.cpp
 NOLDOR_TEST_OBJECTS := $(NOLDOR_TEST_SOURCES:.cpp=.o)
 
 DEPS := $(LIBRARY_SOURCES:.cpp=.d) $(NOLDOR_SOURCES:.cpp=.d) $(NOLDOR_TEST_SOURCES:.cpp=.d)
-CXXFLAGS += -std=c++14 -Wall -Wextra -pedantic -Werror -I. -MMD -MP -g
+CXXFLAGS += -std=c++14 -Wall -Wextra -pedantic -Werror -Iinclude -MMD -MP -g
 
 INSTALL_PREFIX ?= /usr/local
 bindir ?= $(INSTALL_PREFIX)/bin

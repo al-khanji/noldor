@@ -31,8 +31,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 namespace noldor {
 
 struct environment_t {
+    environment_t() = default;
+    environment_t(value o) : outer(o) {}
+
     value outer = list();
-    std::unordered_map<uint64_t, value> symtab;
+    std::unordered_map<uint64_t, value> symtab, parameters;
 };
 
 static void environment_destruct(value self)
@@ -97,7 +100,7 @@ value mk_environment(value outer)
     if (is_null(outer))
         outer = environment_global();
 
-    return object_allocate<environment_t>(environment_metaobject(), { outer, {} });
+    return object_allocate<environment_t>(environment_metaobject(), environment_t(outer));
 }
 
 value mk_empty_environment()
@@ -166,6 +169,40 @@ value environment_define(value env, value sym, value val)
     if (!res.second)
         data->symtab.at(sym) = val;
     return val;
+}
+
+value environment(value import_sets)
+{
+    value env = mk_empty_environment();
+
+    while (!is_null(import_sets)) {
+        (void) /* TODO: actual import */ car(import_sets);
+        import_sets = cdr(import_sets);
+    }
+
+    return env;
+}
+
+value null_environment(value version)
+{
+    (void) version;
+    return mk_environment();
+}
+
+value interaction_environment()
+{
+    static value env = mk_environment();
+    static basic_scope scope;
+
+    if (scope.variables.empty())
+        scope.variables = { &env };
+
+    return env;
+}
+
+value parametrize(value parameters, dot_tag, value body)
+{
+    return cons(parameters, body);
 }
 
 }

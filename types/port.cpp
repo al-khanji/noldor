@@ -779,4 +779,63 @@ bool is_char_ready(dot_tag, value portl)
     return is_char_ready(get_input_port("is_char_ready", portl));
 }
 
+value write(value obj, dot_tag, value port)
+{
+    port = is_null(port) ? current_output_port()
+                         : cadr(port);
+
+    check_type(is_output_port, port, "write: expected output port");
+
+    auto repr = printable(obj);
+    auto data = object_data_as<port_t *>(port);
+
+    if (is_string_port(port)) {
+        data->strdata += repr;
+    } else if (is_file_port(port)) {
+        while (repr.size()) {
+            int result;
+            EINTR_SAFE(result, ::write, data->fd, repr.data(), repr.size());
+
+            if (result == -1) {
+                perror("write");
+                throw file_error(strerror(errno), port);
+            }
+        }
+    }
+
+    return obj;
+}
+
+value display(value obj, dot_tag, value port)
+{
+    port = is_null(port) ? current_output_port()
+                         : cadr(port);
+
+    check_type(is_output_port, port, "display: expected output port");
+
+    auto repr = printable(obj);
+    auto data = object_data_as<port_t *>(port);
+
+    if (is_string_port(port)) {
+        data->strdata += repr;
+    } else if (is_file_port(port)) {
+        while (repr.size()) {
+            int result;
+            EINTR_SAFE(result, ::write, data->fd, repr.data(), repr.size());
+
+            if (result == -1) {
+                perror("write");
+                throw file_error(strerror(errno), port);
+            }
+        }
+    }
+
+    return obj;
+}
+
+value newline(dot_tag, value port)
+{
+    return display(mk_string("\n"), {}, port);
+}
+
 } // namespace noldor

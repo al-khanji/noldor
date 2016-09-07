@@ -29,26 +29,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace noldor;
 
-struct basic_scope : scope
+int repl()
 {
-    std::vector<value *> variables;
-
-    void visit(gc_visit_fn_t visitor, void *data) override
-    {
-        for (value *v : variables)
-            visitor(v, data);
-    }
-};
-
-int main(int, char **)
-{
-    noldor_init();
-
     auto env = mk_environment();
     auto port = mk_input_port(0);
 
-    basic_scope sc;
-    sc.variables =  { &env, &port };
+    basic_scope sc { &env, &port };
 
     puts("\u262F");
 
@@ -71,6 +57,19 @@ int main(int, char **)
     }
 
     puts("\n\u203B");
+
+    return 0;
+}
+
+int main(int argc, char **argv)
+{
+    noldor_init(argc, argv);
+
+    if (argc == 1)
+        return repl();
+
+    for (int i = 0; i < argc; ++i)
+        load(argv[i], {}, interaction_environment());
 
     return 0;
 }

@@ -23,6 +23,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 */
 
-#include "noldor.h"
+#include "noldor_impl.h"
+#include <cassert>
+#include <numeric>
 
-namespace noldor {}
+namespace noldor {
+
+
+
+} // namespace noldor
