@@ -226,10 +226,6 @@ void noldor_init(int argc, char **argv)
 
             set_command_line(argc, argv);
 
-            environment_define(interaction_environment(), SYMBOL_LITERAL(current-input-port-value),  mk_input_port(STDIN_FILENO));
-            environment_define(interaction_environment(), SYMBOL_LITERAL(current-output-port-value), mk_input_port(STDOUT_FILENO));
-            environment_define(interaction_environment(), SYMBOL_LITERAL(current-error-port-value),  mk_input_port(STDERR_FILENO));
-
             initialized = true;
         }
     }

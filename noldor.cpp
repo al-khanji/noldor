@@ -26,13 +26,14 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "noldor.h"
 #include <stdio.h>
 #include <iostream>
+#include <fcntl.h>
 
 using namespace noldor;
 
 int repl()
 {
     auto env = mk_environment();
-    auto port = mk_input_port(0);
+    auto port = mk_port_from_fd(0, O_RDONLY);
 
     basic_scope sc { &env, &port };
 

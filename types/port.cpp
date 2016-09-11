@@ -168,14 +168,20 @@ bool is_output_port_open(value val)
     return object_data_as<port_t *>(val)->flags & port_open;
 }
 
-//value current_input_port()
-//{}
+value current_input_port()
+{
+    return mk_port_from_fd(0, O_RDONLY);
+}
 
-//value current_output_port()
-//{}
+value current_output_port()
+{
+    return mk_port_from_fd(1, O_WRONLY);
+}
 
-//value current_error_port()
-//{}
+value current_error_port()
+{
+    return mk_port_from_fd(2, O_WRONLY);
+}
 
 bool is_file_port(value val)
 {
@@ -211,19 +217,11 @@ static value open_file(std::string filename, int oflag)
                                             fd, std::move(filename), {} });
 }
 
-value mk_input_port(int fd)
+value mk_port_from_fd(int fd, int oflag)
 {
     return object_allocate<port_t>(port_metaobject(),
-                                   port_t { port_file | port_open | port_input | port_binary | port_textual | port_noclose,
+                                   port_t { port_file | port_open | port_noclose | port_flags(oflag),
                                             fd, "", {} });
-}
-
-value mk_input_port(FILE *fp)
-{
-    assert(fp);
-    return object_allocate<port_t>(port_metaobject(),
-                                   port_t { port_file | port_open | port_input | port_binary | port_textual | port_noclose,
-                                            fileno(fp), "", {} });
 }
 
 value open_input_file(std::string filename)

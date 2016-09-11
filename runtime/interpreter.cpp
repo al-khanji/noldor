@@ -38,8 +38,6 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <mutex>
 #include <thread>
 
-#include <boost/thread.hpp>
-
 #pragma clang diagnostic ignored "-Wgnu-label-as-value"
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 

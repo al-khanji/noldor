@@ -381,8 +381,7 @@ NOLDOR_EXPORT std::string string_get(value);
 NOLDOR_EXPORT value mk_char(uint32_t c);
 NOLDOR_EXPORT uint32_t char_get(value);
 
-NOLDOR_EXPORT value mk_input_port(int fd);
-NOLDOR_EXPORT value mk_input_port(FILE *);
+NOLDOR_EXPORT value mk_port_from_fd(int fd, int oflag);
 NOLDOR_EXPORT value read(value);
 NOLDOR_EXPORT value read_char(value);
 NOLDOR_EXPORT value peek_char(value);
