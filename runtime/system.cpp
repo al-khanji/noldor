@@ -28,6 +28,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <stdlib.h>
+#include <string.h>
 
 extern char **environ;
 

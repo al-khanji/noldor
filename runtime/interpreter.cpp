@@ -38,8 +38,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <mutex>
 #include <thread>
 
-#pragma clang diagnostic ignored "-Wgnu-label-as-value"
-#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#if defined(__clang__)
+# pragma clang diagnostic ignored "-Wgnu-label-as-value"
+#elif defined(__GNUC__)
+# pragma GCC diagnostic ignored "-Wpedantic"
+#endif
 
 namespace noldor {
 
@@ -505,7 +508,7 @@ MAKE_LABEL(ev_quoted)
 
 MAKE_LABEL(ev_quasiquoted)
     ASSIGN(unev, OP(text_of_quotation, REG(exp)))
-    ASSIGN(argl, OP(empty_arglist))
+    ASSIGN(argl, OP(empty_arglist,))
     GOTO(LABEL(ev_qq_operand_loop))
 
 MAKE_LABEL(ev_qq_operand_loop)
@@ -578,7 +581,7 @@ MAKE_LABEL(ev_appl_did_operator)
     RESTORE(unev)
     RESTORE(env)
     ASSIGN(proc, REG(val))
-    ASSIGN(argl, OP(empty_arglist))
+    ASSIGN(argl, OP(empty_arglist,))
     TEST(OP(has_no_operands, REG(unev)))
     BRANCH(LABEL(apply_dispatch))
     SAVE(proc)

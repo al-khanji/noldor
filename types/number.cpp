@@ -292,7 +292,7 @@ value add(dot_tag, value argl)
 value sub(dot_tag, value argl)
 {
 	check_type(is_pair, argl, "sub: expected at least one argument");
-	
+
 	value result = car(argl);
 	argl = cdr(argl);
 
@@ -321,7 +321,7 @@ value mul(dot_tag, value argl)
 value div(dot_tag, value argl)
 {
 	check_type(is_pair, argl, "div: expected at least one argument");
-	
+
 	value result = car(argl);
 	argl = cdr(argl);
 
@@ -432,26 +432,31 @@ bool num_gte(dot_tag, value numbers)
 bool is_zero(value n)
 {
     DISPATCH_UNARY_NUMERIC_OP(is_zero, n);
+    NOLDOR_UNREACHABLE();
 }
 
 bool is_positive(value n)
 {
     DISPATCH_UNARY_NUMERIC_OP(is_positive, n);
+    NOLDOR_UNREACHABLE();
 }
 
 bool is_negative(value n)
 {
     DISPATCH_UNARY_NUMERIC_OP(is_negative, n);
+    NOLDOR_UNREACHABLE();
 }
 
 bool is_odd(value n)
 {
     DISPATCH_UNARY_NUMERIC_OP(is_odd, n);
+    NOLDOR_UNREACHABLE();
 }
 
 bool is_even(value n)
 {
     DISPATCH_UNARY_NUMERIC_OP(is_even, n);
+    NOLDOR_UNREACHABLE();
 }
 
 value max(dot_tag, value numbers)

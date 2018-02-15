@@ -26,6 +26,11 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "noldor_impl.h"
 #include <cassert>
 
+#if defined(__clang__)
+#elif defined(__GNUC__)
+# pragma GCC diagnostic ignored "-Winvalid-offsetof"
+#endif
+
 namespace noldor {
 
 static void gc_mark_recursive(value *val, void *data)

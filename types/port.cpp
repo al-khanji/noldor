@@ -28,6 +28,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include <poll.h>
 #include <cassert>
 #include <sys/socket.h>
+#include <string.h>
+#include <algorithm>
 
 namespace noldor {
 

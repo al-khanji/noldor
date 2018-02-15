@@ -26,8 +26,7 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "noldor_impl.h"
 
 #include <sstream>
-
-#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#include <mutex>
 
 namespace noldor {
 

@@ -47,6 +47,10 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # define NOLDOR_EXPORT NOLDOR_DECL_IMPORT
 #endif
 
+#if defined(__GNUC__)
+#  define NOLDOR_UNREACHABLE() __builtin_unreachable()
+#endif
+
 namespace noldor {
 
 struct NOLDOR_EXPORT value
@@ -280,7 +284,7 @@ struct NOLDOR_EXPORT dot_tag {};
     X("environment?",               is_environment,             bool,           value                       ) \
     X("environment",                environment,                value,          value                       ) \
     X("null-environment",           null_environment,           value,          value                       ) \
-    X("interaction-environment",    interaction_environment,    value                                       ) \
+    X("interaction-environment",    interaction_environment,    value,                                      ) \
     X("eval",                       eval,                       value,          value, value                ) \
     X("parametrize",                parametrize,                value,          value, dot_tag, value       ) \
     X("input-port?",                is_input_port,              bool,           value                       ) \
@@ -290,9 +294,9 @@ struct NOLDOR_EXPORT dot_tag {};
     X("port?",                      is_port,                    bool,           value                       ) \
     X("input-port-open?",           is_input_port_open,         bool,           value                       ) \
     X("output-port-open?",          is_output_port_open,        bool,           value                       ) \
-    X("current-input-port",         current_input_port,         value                                       ) \
-    X("current-output-port",        current_output_port,        value                                       ) \
-    X("current-error-port",         current_error_port,         value                                       ) \
+    X("current-input-port",         current_input_port,         value,                                      ) \
+    X("current-output-port",        current_output_port,        value,                                      ) \
+    X("current-error-port",         current_error_port,         value,                                      ) \
     X("file-port?",                 is_file_port,               bool,           value                       ) \
     X("open-input-file",            open_input_file,            value,          std::string                 ) \
     X("open-binary-input-file",     open_binary_input_file,     value,          std::string                 ) \
@@ -303,14 +307,14 @@ struct NOLDOR_EXPORT dot_tag {};
     X("close-output-port",          close_output_port,          bool,           value                       ) \
     X("string-port?",               is_string_port,             bool,           value                       ) \
     X("open-input-string",          open_input_string,          value,          std::string                 ) \
-    X("open-output-string",         open_output_string,         value                                       ) \
+    X("open-output-string",         open_output_string,         value,                                      ) \
     X("get-output-string",          get_output_string,          std::string,    value                       ) \
     X("read",                       read,                       value,          dot_tag, value              ) \
     X("read-char",                  read_char,                  value,          dot_tag, value              ) \
     X("peek-char",                  peek_char,                  value,          dot_tag, value              ) \
     X("read-line",                  read_line,                  value,          dot_tag, value              ) \
     X("eof-object?",                is_eof_object,              bool,           value                       ) \
-    X("eof-object" ,                mk_eof_object,              value                                       ) \
+    X("eof-object" ,                mk_eof_object,              value,                                      ) \
     X("char-ready?",                is_char_ready,              bool,           dot_tag, value              ) \
     X("write",                      write,                      value,          value, dot_tag, value       ) \
     X("display",                    display,                    value,          value, dot_tag, value       ) \
@@ -318,26 +322,21 @@ struct NOLDOR_EXPORT dot_tag {};
     X("load",                       load,                       value,          std::string, dot_tag, value ) \
     X("file-exists?",               file_exists,                bool,           std::string                 ) \
     X("delete-file",                delete_file,                bool,           std::string                 ) \
-    X("command-line",               command_line,               value                                       ) \
+    X("command-line",               command_line,               value,                                      ) \
     X("exit",                       exit,                       bool,           dot_tag, value              ) \
     X("emergency-exit",             emergency_exit,             bool,           dot_tag, value              ) \
     X("get-environment-variable",   get_environment_variable,   value,          std::string                 ) \
-    X("get-environment-variables",  get_environment_variables,  value                                       ) \
+    X("get-environment-variables",  get_environment_variables,  value,                                      ) \
     X("external-representation",    printable,                  std::string,    value                       ) \
-    X("current-second",             current_second,             double                                      ) \
-    X("current-jiffy",              current_jiffy,              int32_t                                     ) \
-    X("jiffies-per-second",         jiffies_per_second,         int32_t                                     ) \
+    X("current-second",             current_second,             double,                                     ) \
+    X("current-jiffy",              current_jiffy,              int32_t,                                    ) \
+    X("jiffies-per-second",         jiffies_per_second,         int32_t,                                    ) \
     X("tagged-list?",               is_tagged_list,             bool,           value, value                ) \
-    X("garbage-collect",            run_gc,                     int                                         )
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+    X("garbage-collect",            run_gc,                     int,                                        )
 
 #define DECLARE_C_FUNCTION(LISP_NAME, C_NAME, C_RETURN, ...) NOLDOR_EXPORT C_RETURN C_NAME (__VA_ARGS__);
 X_NOLDOR_SHARED_PROCEDURES(DECLARE_C_FUNCTION)
 #undef DECLARE_C_FUNCTION
-
-#pragma clang diagnostic pop
 
 #define SYMBOL_LITERAL(NAME) [] () -> value { static value sym = symbol(#NAME); return sym; } ()
 
@@ -394,7 +393,9 @@ NOLDOR_EXPORT std::ostream & operator << (std::ostream & os, value val);
 
 struct basic_scope : scope
 {
-    inline basic_scope(std::initializer_list<value *> vars = {})
+    basic_scope() = default;
+
+    inline basic_scope(std::initializer_list<value *> vars)
         : variables(std::move(vars))
     {}
 
