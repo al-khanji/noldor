@@ -48,11 +48,11 @@ static std::string primitive_procedure_repr(value val)
 
     std::stringstream stream;
 
-    stream << "<#primitive-function";
+    stream << "<#primitive-function ";
     if (!data->name.empty())
-        stream << " C_" << data->name;
+        stream << "C_" << data->name << " ";
 
-    stream << " 0x" << std::hex << data << ">";
+    stream << std::hex << data << ">";
     return stream.str();
 }
 
