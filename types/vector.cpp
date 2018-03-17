@@ -48,6 +48,9 @@ static void vector_gc_visit(value self, gc_visit_fn_t visitor, void *data)
 static std::string vector_repr(value obj)
 {
     auto vec = object_data_as<vector_t *>(obj);
+    if (vec->elements.empty())
+        return "#()";
+
     auto res = std::accumulate(vec->elements.begin(), vec->elements.end(), std::string{}, [] (const std::string &acc, value v) {
         return acc + " " + printable(v);
     });
