@@ -27,15 +27,12 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 using namespace noldor;
 
-int main(int, char **)
+int main(int argc, char **argv)
 {
-    noldor_init();
+    noldor_init(argc, argv);
 
     auto env = mk_environment();
-
-    scope sc;
-    sc.add(env);
-
+    basic_scope sc {&env};
     run_gc();
 
     return 0;
