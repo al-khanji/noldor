@@ -278,7 +278,7 @@ bool equal(value obj1, value obj2)
         return char_get(obj1) == char_get(obj2);
 
     if (is_string(obj1))
-        return string_get(obj1) == string_get(obj1);
+        return string_get(obj1) == string_get(obj2);
 
     if (is_vector(obj1))
         return vector_get(obj1) == vector_get(obj2);
